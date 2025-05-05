@@ -1,8 +1,8 @@
-name: CI/CD: Build & Deploy LMS Backend
+name: "CI/CD: Deploy LMS Backend"
 
 on:
   push:
-    branches: [main]
+    branches: [development, dev_release]
 
 jobs:
   deploy:
@@ -21,9 +21,9 @@ jobs:
       - name: Upload image to VPS
         uses: appleboy/scp-action@v0.1.7
         with:
-          host: ${{ secrets.HOSTINGER_HOST }}
-          username: ${{ secrets.HOSTINGER_USER }}
-          key: ${{ secrets.HOSTINGER_SSH_KEY }}
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
           port: 22
           source: "lms-backend.tar.gz"
           target: "~/lms"
@@ -31,9 +31,9 @@ jobs:
       - name: Run container on VPS
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.HOSTINGER_HOST }}
-          username: ${{ secrets.HOSTINGER_USER }}
-          key: ${{ secrets.HOSTINGER_SSH_KEY }}
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
           port: 22
           script: |
             cd ~/lms
