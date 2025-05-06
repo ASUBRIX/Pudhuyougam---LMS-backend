@@ -40,4 +40,4 @@ jobs:
             docker load < lms-backend.tar.gz
             docker stop lms-backend || true
             docker rm lms-backend || true
-            docker run -d -p 3000:3000 --name lms-backend lms-backend
+            docker run -d -p 4001:3000 --name lms-backend lms-backend
