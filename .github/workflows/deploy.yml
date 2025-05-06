@@ -18,7 +18,7 @@ jobs:
       - name: Save Docker image as archive
         run: docker save lms-backend | gzip > lms-backend.tar.gz
 
-      - name: Upload image to VPS
+      - name: Upload Docker archive to VPS
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SERVER_HOST }}
@@ -28,7 +28,7 @@ jobs:
           source: "lms-backend.tar.gz"
           target: "~/lms"
 
-      - name: Run container on VPS
+      - name: Run Docker container on VPS
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVER_HOST }}
