@@ -12,7 +12,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 
 app.get('/', (req, res) => {
-  res.status(200).json({ message: 'Welcome to the LMS Backend API' });
+  res.status(200).json({ message: 'Request recieved at LMS Backend API' });
 });
 
 
