@@ -2,7 +2,7 @@ name: "CI/CD: Deploy LMS Backend"
 
 on:
   push:
-    branches: [development, dev_release]
+    branches: [development, dev-release]
 
 jobs:
   deploy:
