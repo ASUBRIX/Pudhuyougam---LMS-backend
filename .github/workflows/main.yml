@@ -14,37 +14,38 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      - name: Set up SSH for Server
+      - name: Set up SSH Agent for VPS
         uses: webfactory/ssh-agent@v0.9.0
         with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          ssh-private-key: ${{ secrets.SERVER_SSH_KEY }}
 
       - name: Upload GitHub Repo Deploy Key to Server
         run: |
-          echo "${{ secrets.REPO_SSH_KEY }}" > id_rsa_server
-          chmod 600 id_rsa_server
-          scp -o StrictHostKeyChecking=no id_rsa_server ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:~/.ssh/id_rsa_server
+          echo "${{ secrets.REPO_SSH_KEY }}" > id_rsa_repo
+          chmod 600 id_rsa_repo
+          scp -o StrictHostKeyChecking=no id_rsa_repo ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:~/.ssh/id_rsa_repo
 
-      - name: Configure SSH for GitHub on Server
+      - name: Configure SSH GitHub Access on Server
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOSSH'
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOSSH'
             mkdir -p ~/.ssh
             chmod 700 ~/.ssh
 
-            echo -e "Host github.com\n  IdentityFile ~/.ssh/id_rsa_server\n  IdentitiesOnly yes" > ~/.ssh/config
+            echo -e "Host github.com\n  IdentityFile ~/.ssh/id_rsa_repo\n  IdentitiesOnly yes" > ~/.ssh/config
             chmod 600 ~/.ssh/config
-            
-      - name: Deploy via SSH
-        run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
-            set -e  # stop on error
+          EOSSH
 
-            cd ~/Learning-Application-Server
+      - name: Deploy Backend Code and Restart Docker
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
+            set -e
+
+            cd ~/Pudhuyugam---LMS-backend
 
             echo "🔄 Pulling latest code..."
             git pull origin development
 
-            echo "🐳 Rebuilding Docker containers..."
+            echo "🐳 Restarting Docker..."
             docker-compose down -v
             docker-compose up --build -d
 

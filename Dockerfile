@@ -17,11 +17,11 @@ RUN chmod +x ./bin/www
 ENV NODE_ENV=production
 
 # Expose port from environment variable
-EXPOSE ${PORT:-5000}
+EXPOSE ${PORT:-4001}
 
 # Add healthcheck
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:${PORT:-5000}/health || exit 1
+  CMD wget --no-verbose --tries=1 --spider http://localhost:${PORT:-4001}/health || exit 1
 
 # Start the application
 CMD ["npm", "start"] 
