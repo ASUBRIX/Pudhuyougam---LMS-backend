@@ -40,7 +40,7 @@ jobs:
           ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
             set -e
 
-            cd ~/Pudhuyugam---LMS-backend
+            cd ~/Learning-Application-Server
 
             echo "🔄 Pulling latest code..."
             git pull origin development
