@@ -1,13 +1,27 @@
 FROM node:18-alpine
 
-WORKDIR /app
+# Create app directory
+WORKDIR /usr/src/app
 
+# Install app dependencies
 COPY package*.json ./
-
 RUN npm install
 
+# Bundle app source
 COPY . .
 
-EXPOSE 3000
+# Make the start script executable
+RUN chmod +x ./bin/www
 
-CMD ["npm", "start"]
+# Set NODE_ENV
+ENV NODE_ENV=production
+
+# Expose port from environment variable
+EXPOSE ${PORT:-5000}
+
+# Add healthcheck
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:${PORT:-5000}/health || exit 1
+
+# Start the application
+CMD ["npm", "start"] 

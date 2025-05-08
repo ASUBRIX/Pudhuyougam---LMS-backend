@@ -1,38 +1,68 @@
-const express = require('express');
-const morgan = require('morgan');
-const path = require('path');
+//app.js
 
-const app = express();
+var createError = require('http-errors');
+var express = require('express');
+var path = require('path');
+var cookieParser = require('cookie-parser');
+var logger = require('morgan');
+const cors = require('cors');
 
+// Initialize database connection
+require('./config/database');
 
-app.use(morgan('dev'));
+var indexRouter = require('./routes/index');
+var usersRouter = require('./routes/users');
+var testsRouter = require('./routes/tests');
+var studentsRouter = require('./routes/students');
+var settingsRouter = require('./routes/settings');
+var termsRouter = require('./routes/termsConditions');
+var bannersRouter = require('./routes/banners');
+
+var app = express();
+
+app.use(cors({
+  origin: '*', // Be careful with this in production
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'auth_key']
+}));
+
+// Add explicit handling for OPTIONS requests
+app.options('*', cors());
+
+// view engine setup
+app.set('views', path.join(__dirname, 'views'));
+app.set('view engine', 'ejs');
+
+app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
+app.use('/', indexRouter);
+app.use('/api/users', usersRouter);
+app.use('/api/tests', testsRouter);
+app.use('/api/students', studentsRouter);
+app.use('/api/settings', settingsRouter);
+app.use('/api/legal', termsRouter);
+app.use('/api/banners', bannersRouter);
 
-app.get('/', (req, res) => {
-  res.status(200).json({ message: 'Request recieved at LMS Backend API' });
+// catch 404 and forward to error handler
+app.use(function(req, res, next) {
+  next(createError(404));
 });
 
+// error handler
+app.use(function(err, req, res, next) {
+  // set locals, only providing error in development
+  res.locals.message = err.message;
+  res.locals.error = req.app.get('env') === 'development' ? err : {};
+  res.locals.title = 'Error'; // Add title for error page
+  res.locals.content = 'error'; // Specify the content template
 
-app.get('/api/test', (req, res) => {
-  res.json({ success: true, message: 'API is working!' });
+  // render the error page
+  res.status(err.status || 500);
+  res.render('layout');
 });
 
-
-app.use((req, res, next) => {
-  res.status(404).json({ error: 'Route not found' });
-});
-
-
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ error: 'Something went wrong' });
-});
-
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`LMS Backend running on port ${PORT}`);
-});
+module.exports = app;
