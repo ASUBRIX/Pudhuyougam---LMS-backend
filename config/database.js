@@ -33,9 +33,9 @@ pool.connect().then(() => {
   console.log("Connected to PostgreSQL database one");
 });
 // Test the connection
-pool.on("connect", () => {
-  console.log("Connected to PostgreSQL database");
-});
+// pool.on("connect", () => {
+//   console.log("Connected to PostgreSQL database");
+// });
 
 // Handle connection errors
 pool.on("error", (err) => {

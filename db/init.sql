@@ -1,7 +1,3 @@
--- db/init.sql
--- schema
-
--- Drop tables if they exist
 DROP TABLE IF EXISTS users CASCADE;
 DROP TABLE IF EXISTS courses CASCADE;
 DROP TABLE IF EXISTS enrollments CASCADE;
@@ -200,3 +196,12 @@ CREATE INDEX idx_test_questions_test ON test_questions(test_id);
 CREATE INDEX idx_test_options_question ON test_options(question_id);
 CREATE INDEX idx_test_attempts_test ON test_attempts(test_id);
 CREATE INDEX idx_test_attempts_user ON test_attempts(user_id);
+
+-- Table for gallery
+CREATE TABLE gallery_items (
+  id SERIAL PRIMARY KEY,
+  name TEXT NOT NULL,
+  image_url TEXT NOT NULL,
+  type TEXT DEFAULT 'event',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

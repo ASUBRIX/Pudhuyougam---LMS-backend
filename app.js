@@ -44,6 +44,7 @@ app.use('/api/users', usersRouter);
 app.use('/api/tests', testsRouter);
 app.use('/api/students', studentsRouter);
 app.use('/api/settings', settingsRouter);
+app.use('/api/gallery', require('./routes/gallery'));
 app.use('/api/legal', termsRouter);
 app.use('/api/banners', bannersRouter);
 
