@@ -7,50 +7,51 @@ on:
 
 jobs:
   deploy:
-    name: SSH Deploy & Docker
+    name: Build Docker and Deploy to VPS
     runs-on: ubuntu-latest
 
     steps:
-      - name: 📥 Checkout Repository
+      - name: 📥 Checkout Code
         uses: actions/checkout@v3
+
+      - name: 🐳 Build Docker Image
+        run: |
+          docker build -t lms-backend .
+
+      - name: 🗜️ Save Docker Image to File
+        run: |
+          docker save lms-backend | gzip > lms-backend.tar.gz
 
       - name: 🔐 Set up SSH Agent for VPS
         uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.SERVER_SSH_KEY }}
 
-      - name: 📦 Upload GitHub Repo Deploy Key to Server
-        env:
-          DEPLOY_KEY: ${{ secrets.REPO_SSH_KEY }}
-        run: |
-          echo "$DEPLOY_KEY" > id_rsa_repo
-          chmod 600 id_rsa_repo
-          scp -o StrictHostKeyChecking=no id_rsa_repo ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:~/.ssh/id_rsa_repo
-          rm -f id_rsa_repo
+      - name: 🚚 Copy Docker Image to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: 22
+          source: "lms-backend.tar.gz"
+          target: "~/lms-backend.tar.gz"
 
-      - name: ⚙️ Configure SSH GitHub Access on Server
-        run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOSSH'
-            mkdir -p ~/.ssh
-            chmod 700 ~/.ssh
-
-            echo -e "Host github.com\n  IdentityFile ~/.ssh/id_rsa_repo\n  IdentitiesOnly yes" > ~/.ssh/config
-            chmod 600 ~/.ssh/config
-          EOSSH
-
-      - name: 🚀 Deploy Backend Code and Restart Docker
+      - name: 🔧 Load and Run Docker Image on VPS
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
-            set -e
+            docker load < ~/lms-backend.tar.gz
+            rm -f ~/lms-backend.tar.gz
 
-            cd ~/Learning-Application-Server
+            echo "🚀 Restarting container..."
+            docker stop lms-backend || true
+            docker rm lms-backend || true
 
-            echo "🔄 Pulling latest code..."
-            git pull origin development
-
-            echo "🐳 Restarting Docker..."
-            docker-compose down -v
-            docker-compose up --build -d
+            docker run -d \
+              --name lms-backend \
+              -p 4001:4001 \
+              --env-file ~/Learning-Application-Server/.env \
+              lms-backend
 
             echo "✅ Deployment complete."
           EOF
