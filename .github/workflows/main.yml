@@ -11,24 +11,24 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repository
+      - name: 📥 Checkout Repository
         uses: actions/checkout@v3
 
-      - name: Set up SSH Agent for VPS
+      - name: 🔐 Set up SSH Agent for VPS
         uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.SERVER_SSH_KEY }}
 
-      - name: Upload GitHub Repo Deploy Key to Server
+      - name: 📦 Upload GitHub Repo Deploy Key to Server
+        env:
+          DEPLOY_KEY: ${{ secrets.REPO_SSH_KEY }}
         run: |
-          cat << 'EOF' > id_rsa_repo
-          ${{ secrets.REPO_SSH_KEY }}
-          EOF
+          echo "$DEPLOY_KEY" > id_rsa_repo
           chmod 600 id_rsa_repo
           scp -o StrictHostKeyChecking=no id_rsa_repo ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:~/.ssh/id_rsa_repo
           rm -f id_rsa_repo
 
-      - name: Configure SSH GitHub Access on Server
+      - name: ⚙️ Configure SSH GitHub Access on Server
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOSSH'
             mkdir -p ~/.ssh
@@ -38,7 +38,7 @@ jobs:
             chmod 600 ~/.ssh/config
           EOSSH
 
-      - name: Deploy Backend Code and Restart Docker
+      - name: 🚀 Deploy Backend Code and Restart Docker
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
             set -e
