@@ -37,7 +37,7 @@ jobs:
           source: "lms-backend.tar.gz"
           target: "~/lms-backend.tar.gz"
 
-      - name: 🔧 Load and Run Docker Image on VPS
+      - name: Load and Run Docker Image on VPS
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
             docker load < ~/lms-backend.tar.gz
