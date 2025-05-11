@@ -63,7 +63,6 @@ app.use(function(err, req, res, next) {
   res.locals.title = 'Error'; // Add title for error page
   res.locals.content = 'error'; // Specify the content template
 
-  // render the error page
   res.status(err.status || 500);
   res.render('layout');
 });
