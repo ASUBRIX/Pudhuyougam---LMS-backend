@@ -21,9 +21,12 @@ jobs:
 
       - name: Upload GitHub Repo Deploy Key to Server
         run: |
-          echo "${{ secrets.REPO_SSH_KEY }}" > id_rsa_repo
+          cat << 'EOF' > id_rsa_repo
+          ${{ secrets.REPO_SSH_KEY }}
+          EOF
           chmod 600 id_rsa_repo
           scp -o StrictHostKeyChecking=no id_rsa_repo ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:~/.ssh/id_rsa_repo
+          rm -f id_rsa_repo
 
       - name: Configure SSH GitHub Access on Server
         run: |
@@ -42,12 +45,12 @@ jobs:
 
             cd ~/Learning-Application-Server
 
-            echo "Pulling latest code..."
+            echo "🔄 Pulling latest code..."
             git pull origin development
 
-            echo "Restarting Docker..."
+            echo "🐳 Restarting Docker..."
             docker-compose down -v
             docker-compose up --build -d
 
-            echo "Deployment complete."
+            echo "✅ Deployment complete."
           EOF
