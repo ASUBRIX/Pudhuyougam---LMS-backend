@@ -17,7 +17,7 @@ RUN chmod +x ./bin/www
 ENV NODE_ENV=production
 
 # Expose port from environment variable
-EXPOSE ${PORT:-4001}
+EXPOSE 4001
 
 # Add healthcheck
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \

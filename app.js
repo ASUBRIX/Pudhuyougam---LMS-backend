@@ -47,6 +47,8 @@ app.use('/api/settings', settingsRouter);
 app.use('/api/gallery', require('./routes/gallery'));
 app.use('/api/legal', termsRouter);
 app.use('/api/banners', bannersRouter);
+app.use('/api/seo-settings', require('./routes/seo'));
+
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
