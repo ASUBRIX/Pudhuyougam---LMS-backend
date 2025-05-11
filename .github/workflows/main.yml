@@ -49,7 +49,7 @@ jobs:
 
             docker run -d \
               --name lms-backend \
-              -p 4001:4001 \
+              -p 5000:5000 \
               --env-file ~/Learning-Application-Server/.env \
               lms-backend
 
