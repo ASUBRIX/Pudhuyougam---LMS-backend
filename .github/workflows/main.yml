@@ -7,51 +7,47 @@ on:
 
 jobs:
   deploy:
-    name: Build Docker and Deploy to VPS
+    name: SSH Deploy & Docker
     runs-on: ubuntu-latest
 
     steps:
-      - name: 📥 Checkout Code
+      - name: Checkout Repository
         uses: actions/checkout@v3
 
-      - name: 🐳 Build Docker Image
-        run: |
-          docker build -t lms-backend .
-
-      - name: 🗜️ Save Docker Image to File
-        run: |
-          docker save lms-backend | gzip > lms-backend.tar.gz
-
-      - name: 🔐 Set up SSH Agent for VPS
+      - name: Set up SSH for Server
         uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.SERVER_SSH_KEY }}
 
-      - name: 🚚 Copy Docker Image to VPS
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
-          port: 22
-          source: "lms-backend.tar.gz"
-          target: "~/lms-backend.tar.gz"
+      - name: Upload GitHub Repo Deploy Key to Server
+        run: |
+          echo "${{ secrets.REPO_SSH_KEY }}" > id_rsa_server
+          chmod 600 id_rsa_server
+          scp -o StrictHostKeyChecking=no id_rsa_server ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:~/.ssh/id_rsa_server
 
-      - name: Load and Run Docker Image on VPS
+      - name: Configure SSH for GitHub on Server
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOSSH'
+            mkdir -p ~/.ssh
+            chmod 700 ~/.ssh
+
+            echo -e "Host github.com\n  IdentityFile ~/.ssh/id_rsa_server\n  IdentitiesOnly yes" > ~/.ssh/config
+            chmod 600 ~/.ssh/config
+          EOSSH
+
+      - name: Deploy via SSH
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
-            docker load < ~/lms-backend.tar.gz
-            rm -f ~/lms-backend.tar.gz
+            set -e  # stop on error
 
-            echo "🚀 Restarting container..."
-            docker stop lms-backend || true
-            docker rm lms-backend || true
+            cd ~/Learning-Application-Server
 
-            docker run -d \
-              --name lms-backend \
-              -p 5000:5000 \
-              --env-file ~/Learning-Application-Server/.env \
-              lms-backend
+            echo "🔄 Pulling latest code..."
+            git pull origin development
+
+            echo "🐳 Rebuilding Docker containers..."
+            docker-compose down -v
+            docker-compose up --build -d
 
             echo "✅ Deployment complete."
           EOF

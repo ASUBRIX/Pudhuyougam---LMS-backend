@@ -1,3 +1,5 @@
+//app.js
+
 var createError = require('http-errors');
 var express = require('express');
 var path = require('path');
@@ -37,32 +39,28 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'OK' });
-});
 app.use('/', indexRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/tests', testsRouter);
 app.use('/api/students', studentsRouter);
 app.use('/api/settings', settingsRouter);
-app.use('/api/gallery', require('./routes/gallery'));
 app.use('/api/legal', termsRouter);
 app.use('/api/banners', bannersRouter);
-app.use('/api/seo-settings', require('./routes/seo'));
 
-
-
+// catch 404 and forward to error handler
 app.use(function(req, res, next) {
   next(createError(404));
 });
 
-
+// error handler
 app.use(function(err, req, res, next) {
+  // set locals, only providing error in development
   res.locals.message = err.message;
   res.locals.error = req.app.get('env') === 'development' ? err : {};
   res.locals.title = 'Error'; // Add title for error page
   res.locals.content = 'error'; // Specify the content template
 
+  // render the error page
   res.status(err.status || 500);
   res.render('layout');
 });
