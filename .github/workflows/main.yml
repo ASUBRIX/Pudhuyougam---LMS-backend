@@ -42,12 +42,12 @@ jobs:
 
             cd ~/Learning-Application-Server
 
-            echo "🔄 Pulling latest code..."
+            echo "Pulling latest code..."
             git pull origin development
 
-            echo "🐳 Restarting Docker..."
+            echo "Restarting Docker..."
             docker-compose down -v
             docker-compose up --build -d
 
-            echo "✅ Deployment complete."
+            echo "Deployment complete."
           EOF
