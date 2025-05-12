@@ -224,6 +224,8 @@ router.get('/', auth, requireAdmin, async (req, res) => {
 
 // Add new student (admin only)
 router.post('/', auth, requireAdmin, async (req, res) => {
+    console.log("add students recieved");
+    
     try {
         const {
             userId,

@@ -30,7 +30,7 @@ const pool = new Pool({
 });
 
 pool.connect().then(() => {
-  console.log("Connected to PostgreSQL database one");
+  console.log("Connected to PostgreSQL database");
 });
 // Test the connection
 // pool.on("connect", () => {
