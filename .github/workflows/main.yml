@@ -21,7 +21,7 @@ jobs:
 
       - name: Upload GitHub Repo Deploy Key to Server
         run: |
-          printf "%s\n" "${{ secrets.REPO_SSH_KEY }}" > id_rsa_server
+          echo "${{ secrets.REPO_SSH_KEY }}" | tr -d '\r' > id_rsa_server
           chmod 600 id_rsa_server
           scp -o StrictHostKeyChecking=no id_rsa_server ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:~/.ssh/id_rsa_server        
 
