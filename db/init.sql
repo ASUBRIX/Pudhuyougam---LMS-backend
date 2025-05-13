@@ -12,6 +12,7 @@ DROP TABLE IF EXISTS privacy_policy CASCADE;
 DROP TABLE IF EXISTS terms_conditions CASCADE;
 DROP TABLE IF EXISTS website_settings CASCADE;
 DROP TABLE IF EXISTS faculties CASCADE;
+DROP TABLE IF EXISTS gallery_items CASCADE;
 
 -- Create banners table
 CREATE TABLE banners (
@@ -223,4 +224,18 @@ CREATE TABLE faculties (
     joining_date DATE DEFAULT CURRENT_DATE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+CREATE TABLE blogs (
+  id SERIAL PRIMARY KEY,
+  title TEXT NOT NULL,
+  date TEXT NOT NULL,
+  author TEXT NOT NULL,
+  excerpt TEXT,
+  content TEXT,
+  image_url TEXT,
+  tags TEXT[], -- Array of tags
+  is_published BOOLEAN DEFAULT true,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

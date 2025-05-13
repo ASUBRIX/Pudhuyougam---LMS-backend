@@ -16,6 +16,7 @@ var settingsRouter = require('./routes/settings');
 var termsRouter = require('./routes/termsConditions');
 var bannersRouter = require('./routes/banners');
 var facultyRouter = require('./routes/faculty');
+var blogsRouter = require("./routes/blogs");
 
 var app = express();
 
@@ -46,6 +47,7 @@ app.use('/api/settings', settingsRouter);
 app.use('/api/legal', termsRouter);
 app.use('/api/banners', bannersRouter);
 app.use('/api/faculties', facultyRouter);
+app.use("/api/blogs",blogsRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
