@@ -11,6 +11,7 @@ DROP TABLE IF EXISTS banners CASCADE;
 DROP TABLE IF EXISTS privacy_policy CASCADE;
 DROP TABLE IF EXISTS terms_conditions CASCADE;
 DROP TABLE IF EXISTS website_settings CASCADE;
+DROP TABLE IF EXISTS faculties CASCADE;
 
 -- Create banners table
 CREATE TABLE banners (
@@ -204,4 +205,22 @@ CREATE TABLE gallery_items (
   image_url TEXT NOT NULL,
   type TEXT DEFAULT 'event',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create faculty table
+CREATE TABLE faculties (
+    id SERIAL PRIMARY KEY,
+    faculty_id VARCHAR(20) UNIQUE NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    phone VARCHAR(20),
+    department VARCHAR(100),
+    designation VARCHAR(100),
+    status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'blocked')),
+    qualification TEXT,
+    experience TEXT,
+    avatar TEXT,
+    joining_date DATE DEFAULT CURRENT_DATE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
