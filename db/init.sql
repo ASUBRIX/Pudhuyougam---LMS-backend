@@ -13,6 +13,8 @@ DROP TABLE IF EXISTS terms_conditions CASCADE;
 DROP TABLE IF EXISTS website_settings CASCADE;
 DROP TABLE IF EXISTS faculties CASCADE;
 DROP TABLE IF EXISTS gallery_items CASCADE;
+DROP TABLE IF EXISTS blogs;
+DROP TABLE IF EXISTS announcements;
 
 -- Create banners table
 CREATE TABLE banners (
@@ -239,3 +241,13 @@ CREATE TABLE blogs (
   is_published BOOLEAN DEFAULT true,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE announcements (
+  id SERIAL PRIMARY KEY,
+  title VARCHAR(255) NOT NULL,
+  content TEXT NOT NULL,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
