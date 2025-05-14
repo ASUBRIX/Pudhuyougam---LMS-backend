@@ -15,6 +15,7 @@ DROP TABLE IF EXISTS faculties CASCADE;
 DROP TABLE IF EXISTS gallery_items CASCADE;
 DROP TABLE IF EXISTS blogs;
 DROP TABLE IF EXISTS announcements;
+DROP TABLE IF EXISTS current_affairs;
 
 -- Create banners table
 CREATE TABLE banners (
@@ -246,6 +247,17 @@ CREATE TABLE announcements (
   id SERIAL PRIMARY KEY,
   title VARCHAR(255) NOT NULL,
   content TEXT NOT NULL,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE current_affairs (
+  id SERIAL PRIMARY KEY,
+  title VARCHAR(255) NOT NULL,
+  content TEXT NOT NULL,
+  category VARCHAR(100),
+  date DATE DEFAULT CURRENT_DATE,
   is_active BOOLEAN DEFAULT true,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

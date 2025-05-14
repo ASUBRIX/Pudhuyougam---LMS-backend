@@ -18,6 +18,7 @@ var bannersRouter = require('./routes/banners');
 var facultyRouter = require('./routes/faculty');
 var blogsRouter = require("./routes/blogs");
 var announcementsRouter = require('./routes/announcements.js');
+var currentAffairs = require('./routes/currentAffairs.js');
 
 var app = express();
 
@@ -50,6 +51,7 @@ app.use('/api/banners', bannersRouter);
 app.use('/api/faculties', facultyRouter);
 app.use("/api/blogs",blogsRouter);
 app.use('/api/announcements',announcementsRouter);
+app.use("/api/current-affairs",currentAffairs);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
