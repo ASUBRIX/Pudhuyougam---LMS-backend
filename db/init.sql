@@ -1,5 +1,3 @@
-DROP TABLE IF EXISTS course_subcategories CASCADE;
-DROP TABLE IF EXISTS course_categories CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
 DROP TABLE IF EXISTS enrollments CASCADE;
 DROP TABLE IF EXISTS test_folders CASCADE;
@@ -23,20 +21,12 @@ DROP TABLE IF EXISTS course_modules CASCADE;
 DROP TABLE IF EXISTS course_lessons CASCADE;
 DROP TABLE IF EXISTS course_faqs CASCADE;
 DROP TABLE IF EXISTS course_pricing_plans CASCADE;
+DROP TABLE IF EXISTS course_subcategories CASCADE;
+DROP TABLE IF EXISTS course_categories CASCADE;
+DROP TABLE IF EXISTS course_content_modules
+DROP TABLE IF EXISTS course_content_folders
+DROP TABLE IF EXISTS course_contents
 
-
-CREATE TABLE course_categories (
-  id SERIAL PRIMARY KEY,
-  title VARCHAR(255) NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE course_subcategories (
-  id SERIAL PRIMARY KEY,
-  category_id INTEGER REFERENCES course_categories(id) ON DELETE CASCADE,
-  title VARCHAR(255) NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
 
 
 CREATE TABLE banners (
@@ -367,6 +357,55 @@ CREATE TABLE course_pricing_plans (
   is_promoted BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+
+
+CREATE TABLE course_categories (
+  id SERIAL PRIMARY KEY,
+  title VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE course_subcategories (
+  id SERIAL PRIMARY KEY,
+  category_id INTEGER REFERENCES course_categories(id) ON DELETE CASCADE,
+  title VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE course_content_modules (
+  id SERIAL PRIMARY KEY,
+  course_id INTEGER REFERENCES courses(id) ON DELETE CASCADE,
+  title VARCHAR(255) NOT NULL,
+  sort_order INTEGER,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+CREATE TABLE course_content_folders (
+  id SERIAL PRIMARY KEY,
+  module_id INTEGER REFERENCES course_content_modules(id) ON DELETE CASCADE,
+  parent_id INTEGER REFERENCES course_content_folders(id),
+  title VARCHAR(255) NOT NULL,
+  is_free BOOLEAN DEFAULT FALSE,
+  sort_order INTEGER,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+CREATE TABLE course_contents (
+  id SERIAL PRIMARY KEY,
+  folder_id INTEGER REFERENCES course_content_folders(id) ON DELETE CASCADE,
+  type VARCHAR(20) CHECK (type IN ('video', 'document', 'image', 'archive', 'link')),
+  title VARCHAR(255) NOT NULL,
+  file_path TEXT,
+  video_url TEXT,
+  is_free BOOLEAN DEFAULT FALSE,
+  sort_order INTEGER,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
 
 
 

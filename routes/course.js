@@ -170,5 +170,33 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+
+// Get modules for a course
+router.get('/modules/:courseId', async (req, res) => {
+  try {
+    const result = await query('SELECT * FROM course_content_modules WHERE course_id = $1 ORDER BY sort_order', [req.params.courseId]);
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch modules' });
+  }
+});
+
+// Create a new module
+router.post('/modules', async (req, res) => {
+  const { course_id, title, sort_order } = req.body;
+  try {
+    const result = await query(
+      'INSERT INTO course_content_modules (course_id, title, sort_order) VALUES ($1, $2, $3) RETURNING *',
+      [course_id, title, sort_order || 0]
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to create module' });
+  }
+});
+
+
+
+
 module.exports = router;
 

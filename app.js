@@ -20,6 +20,7 @@ var blogsRouter = require("./routes/blogs");
 var announcementsRouter = require('./routes/announcements.js');
 var currentAffairs = require('./routes/currentAffairs.js');
 var courseRouter = require('./routes/course.js');
+const courseContentRouter = require('./routes/courseContent');
 
 var app = express();
 
@@ -54,6 +55,7 @@ app.use("/api/blogs",blogsRouter);
 app.use('/api/announcements',announcementsRouter);
 app.use("/api/current-affairs",currentAffairs);
 app.use('/api/courses',courseRouter);
+app.use('/api/course-content', courseContentRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
