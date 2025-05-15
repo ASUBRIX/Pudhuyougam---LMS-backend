@@ -20,7 +20,7 @@ var blogsRouter = require("./routes/blogs");
 var announcementsRouter = require('./routes/announcements.js');
 var currentAffairs = require('./routes/currentAffairs.js');
 var courseRouter = require('./routes/course.js');
-const courseContentRouter = require('./routes/courseContent');
+const courseContentRouter = require('./routes/course.js');
 
 var app = express();
 
