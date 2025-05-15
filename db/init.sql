@@ -1,5 +1,6 @@
+DROP TABLE IF EXISTS course_subcategories CASCADE;
+DROP TABLE IF EXISTS course_categories CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
-DROP TABLE IF EXISTS courses CASCADE;
 DROP TABLE IF EXISTS enrollments CASCADE;
 DROP TABLE IF EXISTS test_folders CASCADE;
 DROP TABLE IF EXISTS tests CASCADE;
@@ -16,6 +17,40 @@ DROP TABLE IF EXISTS gallery_items CASCADE;
 DROP TABLE IF EXISTS blogs;
 DROP TABLE IF EXISTS announcements;
 DROP TABLE IF EXISTS current_affairs;
+DROP TABLE IF EXISTS enquiries;
+DROP TABLE IF EXISTS courses CASCADE;
+DROP TABLE IF EXISTS course_modules CASCADE;
+DROP TABLE IF EXISTS course_lessons CASCADE;
+DROP TABLE IF EXISTS course_faqs CASCADE;
+DROP TABLE IF EXISTS course_pricing_plans CASCADE;
+
+
+CREATE TABLE course_categories (
+  id SERIAL PRIMARY KEY,
+  title VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE course_subcategories (
+  id SERIAL PRIMARY KEY,
+  category_id INTEGER REFERENCES course_categories(id) ON DELETE CASCADE,
+  title VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+CREATE TABLE banners (
+  id SERIAL PRIMARY KEY,
+  title VARCHAR(255) NOT NULL,
+  description TEXT,
+  image_path VARCHAR(255),
+  link VARCHAR(255),
+  status VARCHAR(50) DEFAULT 'Active',
+  sort_order INTEGER,
+  created_at TIMESTAMP WITHOUT TIME ZONE,
+  updated_at TIMESTAMP WITHOUT TIME ZONE
+);
+
 
 -- Create banners table
 CREATE TABLE banners (
@@ -81,16 +116,6 @@ CREATE TABLE users (
     otp_expires TIMESTAMP WITH TIME ZONE,
     auth_key VARCHAR(128),
     auth_key_expires TIMESTAMP WITH TIME ZONE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-
--- Create courses table
-CREATE TABLE courses (
-    id SERIAL PRIMARY KEY,
-    title VARCHAR(255) NOT NULL,
-    description TEXT,
-    instructor_id INTEGER REFERENCES users(id),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
@@ -262,4 +287,86 @@ CREATE TABLE current_affairs (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE enquiries (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(100) NOT NULL,
+  email VARCHAR(100),
+  phone VARCHAR(20),
+  subject VARCHAR(255),
+  message TEXT NOT NULL,
+  is_resolved BOOLEAN DEFAULT false,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE courses (
+  id SERIAL PRIMARY KEY,
+  title VARCHAR(255) NOT NULL,
+  short_description TEXT,
+  full_description TEXT,
+  thumbnail VARCHAR(255),
+  promo_video_url TEXT,
+  price NUMERIC(10,2) DEFAULT 0.00,
+  discount NUMERIC(5,2) DEFAULT 0.00,
+  is_discount_enabled BOOLEAN DEFAULT FALSE,
+  validity_type VARCHAR(20) CHECK (validity_type IN ('single', 'multi', 'lifetime', 'expiry')) DEFAULT 'single',
+  expiry_date DATE,
+  language VARCHAR(50),
+  level VARCHAR(50),
+  is_featured BOOLEAN DEFAULT FALSE,
+  total_lectures INTEGER DEFAULT 0,
+  total_duration VARCHAR(50),
+  instructor_id INTEGER REFERENCES users(id),
+  tags TEXT[],
+  message_to_reviewer TEXT,
+  review_status VARCHAR(20) DEFAULT 'pending',
+  visibility_status VARCHAR(20) DEFAULT 'draft',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+CREATE TABLE course_modules (
+  id SERIAL PRIMARY KEY,
+  course_id INTEGER REFERENCES courses(id) ON DELETE CASCADE,
+  title VARCHAR(255) NOT NULL,
+  sort_order INTEGER,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE course_lessons (
+  id SERIAL PRIMARY KEY,
+  module_id INTEGER REFERENCES course_modules(id) ON DELETE CASCADE,
+  title VARCHAR(255) NOT NULL,
+  content_type VARCHAR(20) CHECK (content_type IN ('video', 'document', 'image', 'archive', 'link')),
+  video_url TEXT,
+  file_path TEXT,
+  is_free BOOLEAN DEFAULT FALSE,
+  sort_order INTEGER,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+CREATE TABLE course_faqs (
+  id SERIAL PRIMARY KEY,
+  course_id INTEGER REFERENCES courses(id) ON DELETE CASCADE,
+  question TEXT NOT NULL,
+  answer TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+CREATE TABLE course_pricing_plans (
+  id SERIAL PRIMARY KEY,
+  course_id INTEGER REFERENCES courses(id) ON DELETE CASCADE,
+  duration INTEGER,
+  unit VARCHAR(10) CHECK (unit IN ('days', 'months', 'years')),
+  price NUMERIC(10,2),
+  discount NUMERIC(5,2),
+  is_promoted BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
 
