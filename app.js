@@ -22,6 +22,7 @@ var currentAffairs = require('./routes/currentAffairs.js');
 var courseRouter = require('./routes/course.js');
 var coursePricingRouter = require('./routes/coursePricingPlans');
 var courseContentRouter = require('./routes/courseContent');
+var couponsRouter = require('./routes/coupons.js');
 
 
 
@@ -62,6 +63,8 @@ app.use("/api/current-affairs",currentAffairs);
 app.use('/api/courses',courseRouter);
 app.use('/api/course-content', courseContentRouter);
 app.use('/api/course-pricing', coursePricingRouter);
+app.use('/api/coupons',couponsRouter);
+
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

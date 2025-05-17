@@ -23,10 +23,12 @@ DROP TABLE IF EXISTS course_faqs CASCADE;
 DROP TABLE IF EXISTS course_pricing_plans CASCADE;
 DROP TABLE IF EXISTS course_subcategories CASCADE;
 DROP TABLE IF EXISTS course_categories CASCADE;
-DROP TABLE IF EXISTS course_content_modules
-DROP TABLE IF EXISTS course_content_folders
-DROP TABLE IF EXISTS course_contents
-DROP TABLE IF EXISTS course_content_modules
+DROP TABLE IF EXISTS course_content_modules;
+DROP TABLE IF EXISTS course_content_folders;
+DROP TABLE IF EXISTS course_contents;
+DROP TABLE IF EXISTS course_content_modules;
+DROP TABLE IF EXISTS coupons;
+
 
 
 
@@ -427,6 +429,19 @@ CREATE TABLE course_content_modules (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE coupons (
+  id SERIAL PRIMARY KEY,
+  code VARCHAR(50) NOT NULL UNIQUE,
+  discount_type VARCHAR(20) NOT NULL, 
+  discount_value NUMERIC NOT NULL,
+  max_usage INTEGER,
+  expiry_date DATE,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
 
 
 
