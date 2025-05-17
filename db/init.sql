@@ -26,6 +26,7 @@ DROP TABLE IF EXISTS course_categories CASCADE;
 DROP TABLE IF EXISTS course_content_modules
 DROP TABLE IF EXISTS course_content_folders
 DROP TABLE IF EXISTS course_contents
+DROP TABLE IF EXISTS course_content_modules
 
 
 
@@ -47,7 +48,7 @@ CREATE TABLE banners (
     id SERIAL PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
     description TEXT,
-    image_path VARCHAR(255),
+    image_url VARCHAR(255),
     link VARCHAR(255),
     status VARCHAR(50) DEFAULT 'Active',
     sort_order INTEGER,
@@ -416,6 +417,18 @@ CREATE TABLE course_pricing_plans (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+
+CREATE TABLE course_content_modules (
+  id SERIAL PRIMARY KEY,
+  course_id INTEGER REFERENCES courses(id) ON DELETE CASCADE,
+  contents JSONB DEFAULT '[]',
+  video_modules JSONB DEFAULT '[]',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
 
 
 
