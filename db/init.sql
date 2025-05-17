@@ -405,6 +405,19 @@ CREATE TABLE course_contents (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE course_pricing_plans (
+  id SERIAL PRIMARY KEY,
+  course_id INTEGER REFERENCES courses(id) ON DELETE CASCADE,
+  duration INTEGER,
+  unit VARCHAR(10) CHECK (unit IN ('days', 'months', 'years')),
+  price NUMERIC(10,2),
+  discount NUMERIC(5,2),
+  is_promoted BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
 
 
 
