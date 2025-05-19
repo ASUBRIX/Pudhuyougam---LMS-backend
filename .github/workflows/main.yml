@@ -11,10 +11,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repository
+      - name: Checkout Repository (optional)
         uses: actions/checkout@v3
 
-      - name: Set up SSH for Server
+      - name: Set up SSH for Server (to connect to VPS)
         uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.SERVER_SSH_KEY }}
@@ -23,31 +23,39 @@ jobs:
         run: |
           echo "${{ secrets.REPO_SSH_KEY }}" | tr -d '\r' > id_rsa_server
           chmod 600 id_rsa_server
-          scp -o StrictHostKeyChecking=no id_rsa_server ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:~/.ssh/id_rsa_server        
+          scp -o StrictHostKeyChecking=no id_rsa_server ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:~/.ssh/id_rsa_server
 
-      - name: Configure SSH for GitHub on Server
+      - name: Configure GitHub SSH access on Server
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOSSH'
             mkdir -p ~/.ssh
             chmod 700 ~/.ssh
 
-            echo -e "Host github.com\n  IdentityFile ~/.ssh/id_rsa_server\n  IdentitiesOnly yes" > ~/.ssh/config
+            # Configure GitHub to use the uploaded deploy key
+            echo -e "Host github.com\n  IdentityFile ~/.ssh/id_rsa_server\n  IdentitiesOnly yes\n  StrictHostKeyChecking no" > ~/.ssh/config
             chmod 600 ~/.ssh/config
           EOSSH
 
       - name: Deploy via SSH
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
-            set -e  # stop on error
+            set -e  # Exit on error
+
+            export GIT_SSH_COMMAND="ssh -i ~/.ssh/id_rsa_server -o IdentitiesOnly=yes -o StrictHostKeyChecking=no"
+
+            echo "📁 Cloning or updating backend repo..."
+            if [ ! -d ~/Learning-Application-Server/.git ]; then
+              git clone git@github.com:ASUBRIX/Pudhuyugam---LMS-backend.git ~/Learning-Application-Server
+            else
+              cd ~/Learning-Application-Server
+              git pull origin development
+            fi
 
             cd ~/Learning-Application-Server
-
-            echo "🔄 Pulling latest code..."
-            git pull origin development
 
             echo "🐳 Rebuilding Docker containers..."
             docker-compose down -v
             docker-compose up --build -d
 
-            echo "✅ Deployment complete."
+            echo "✅ Backend deployment complete."
           EOF
