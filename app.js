@@ -32,12 +32,12 @@ const enquiryRoutes = require('./routes/enquiry');
 var app = express();
 
 app.use(cors({
-  origin: '*', // Be careful with this in production
+  origin: '*', 
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'auth_key']
 }));
 
-// Add explicit handling for OPTIONS requests
+
 app.options('*', cors());
 
 // view engine setup
