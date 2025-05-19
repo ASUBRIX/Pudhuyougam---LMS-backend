@@ -2,9 +2,8 @@ const express = require('express');
 const router = express.Router();
 const { query } = require('../config/database'); 
 
-
+// POST create new enquiry
 router.post('/', async (req, res) => {
-  
   try {
     const { name, email, phone, subject, message } = req.body;
 
@@ -26,6 +25,19 @@ router.post('/', async (req, res) => {
   } catch (error) {
     console.error('Error inserting enquiry:', error.message);
     res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// GET all enquiries
+router.get('/', async (req, res) => {
+  console.log("get api request for fetch data");
+
+  try {
+    const result = await query('SELECT * FROM enquiries ORDER BY created_at DESC');
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching enquiries:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
   }
 });
 
