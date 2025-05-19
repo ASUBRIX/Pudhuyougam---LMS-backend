@@ -23,6 +23,7 @@ var courseRouter = require('./routes/course.js');
 var coursePricingRouter = require('./routes/coursePricingPlans');
 var courseContentRouter = require('./routes/courseContent');
 var couponsRouter = require('./routes/coupons.js');
+const enquiryRoutes = require('./routes/enquiry'); 
 
 
 
@@ -64,6 +65,8 @@ app.use('/api/courses',courseRouter);
 app.use('/api/course-content', courseContentRouter);
 app.use('/api/course-pricing', coursePricingRouter);
 app.use('/api/coupons',couponsRouter);
+app.use('/api/contact-enquiry',enquiryRoutes);
+
 
 
 // catch 404 and forward to error handler
