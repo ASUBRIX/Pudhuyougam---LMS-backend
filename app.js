@@ -24,6 +24,7 @@ var coursePricingRouter = require('./routes/coursePricingPlans');
 var courseContentRouter = require('./routes/courseContent');
 var couponsRouter = require('./routes/coupons.js');
 const enquiryRoutes = require('./routes/enquiry'); 
+const studentManagementRouter = require("./routes/studentManagement.js");
 
 
 
@@ -66,6 +67,7 @@ app.use('/api/course-content', courseContentRouter);
 app.use('/api/course-pricing', coursePricingRouter);
 app.use('/api/coupons',couponsRouter);
 app.use('/api/contact-enquiry',enquiryRoutes);
+app.use('/api/student-management',studentManagementRouter);
 
 
 

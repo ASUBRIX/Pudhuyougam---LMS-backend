@@ -30,6 +30,7 @@ DROP TABLE IF EXISTS announcements CASCADE;
 DROP TABLE IF EXISTS current_affairs CASCADE;
 DROP TABLE IF EXISTS enquiries CASCADE;
 DROP TABLE IF EXISTS coupons CASCADE;
+DROP TABLE IF EXISTS students CASCADE;
 
 -- =====================
 -- CREATE TABLES
@@ -103,22 +104,21 @@ CREATE TABLE users (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Students
 CREATE TABLE students (
-  id VARCHAR(10) PRIMARY KEY,
-  user_id INTEGER REFERENCES users(id),
-  first_name VARCHAR(50) NOT NULL,
-  last_name VARCHAR(50) NOT NULL,
-  email VARCHAR(255) UNIQUE NOT NULL,
-  phone VARCHAR(20) NOT NULL,
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(100) NOT NULL,
+  email VARCHAR(100) NOT NULL UNIQUE,
+  phone VARCHAR(20),
   enrollment_date DATE NOT NULL,
-  status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'blocked')),
-  about TEXT,
-  education JSONB,
-  profile_picture VARCHAR(255),
+  program VARCHAR(100),
+  semester VARCHAR(50),
+  year VARCHAR(50),
+  status VARCHAR(20) DEFAULT 'active',
+  courses TEXT[],  
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
 
 -- Enrollments
 CREATE TABLE enrollments (
