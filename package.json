@@ -6,6 +6,7 @@
   "scripts": {
     "test": "node testFlow.js",
     "dev": "node ./bin/www",
+    "start": "node ./bin/www",
     "migrate": "node utils/migrateDb.js",
     "test:banners": "jest tests/banners.test.js"
   },
