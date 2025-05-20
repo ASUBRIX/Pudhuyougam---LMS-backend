@@ -18,6 +18,9 @@ const io = new Server(server, {
   }
 });
 
+app.get('/health', (req, res) => res.sendStatus(200));
+
+
 
 
 io.on('connection', (socket) => {
