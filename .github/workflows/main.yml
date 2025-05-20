@@ -11,35 +11,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repository (optional)
+      - name: Checkout Repository
         uses: actions/checkout@v3
 
-      - name: Set up SSH for Server (to connect to VPS)
+      - name: Set up SSH
         uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.SERVER_SSH_KEY }}
 
-      - name: Upload GitHub Repo Deploy Key to Server
-        run: |
-          echo "${{ secrets.REPO_SSH_KEY }}" | tr -d '\r' > pudhuyugam_backend
-          chmod 600 pudhuyugam_backend
-          scp -o StrictHostKeyChecking=no pudhuyugam_backend ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:~/.ssh/pudhuyugam_backend
-
-      - name: Configure GitHub SSH access on Server
-        run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOSSH'
-            mkdir -p ~/.ssh
-            chmod 700 ~/.ssh
-
-            # Update SSH config to use pudhuyugam_backend key
-            echo -e "Host github.com\n  IdentityFile ~/.ssh/pudhuyugam_backend\n  IdentitiesOnly yes\n  StrictHostKeyChecking no" > ~/.ssh/config
-            chmod 600 ~/.ssh/config
-          EOSSH
-
       - name: Deploy via SSH
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
-            set -e  # Exit on error
+            set -e
 
             export GIT_SSH_COMMAND="ssh -i ~/.ssh/pudhuyugam_backend -o IdentitiesOnly=yes -o StrictHostKeyChecking=no"
 
@@ -48,6 +31,9 @@ jobs:
               git clone git@github.com:ASUBRIX/Pudhuyougam---LMS-backend ~/Learning-Application-Server
             else
               cd ~/Learning-Application-Server
+              echo "🧹 Cleaning uncommitted changes..."
+              git reset --hard HEAD
+              git clean -fd
               git pull origin development
             fi
 
