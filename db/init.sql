@@ -1,9 +1,13 @@
-DROP TABLE IF EXISTS enrollments CASCADE;
+-- ============================
+-- DROP TABLES (in dependency order)
+-- ============================
 DROP TABLE IF EXISTS test_options CASCADE;
 DROP TABLE IF EXISTS test_questions CASCADE;
 DROP TABLE IF EXISTS test_attempts CASCADE;
 DROP TABLE IF EXISTS tests CASCADE;
 DROP TABLE IF EXISTS test_folders CASCADE;
+
+DROP TABLE IF EXISTS enrollments CASCADE;
 DROP TABLE IF EXISTS students CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
 
@@ -30,8 +34,6 @@ DROP TABLE IF EXISTS announcements CASCADE;
 DROP TABLE IF EXISTS current_affairs CASCADE;
 DROP TABLE IF EXISTS enquiries CASCADE;
 DROP TABLE IF EXISTS coupons CASCADE;
-DROP TABLE IF EXISTS students CASCADE;
-DROP TABLE IF EXISTS gallery_items;
 
 -- =====================
 -- CREATE TABLES
@@ -120,32 +122,6 @@ CREATE TABLE students (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-
--- Enrollments
-CREATE TABLE enrollments (
-  id SERIAL PRIMARY KEY,
-  student_id INTEGER REFERENCES users(id),
-  course_id INTEGER REFERENCES courses(id),
-  enrollment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'completed', 'dropped')),
-  UNIQUE(student_id, course_id)
-);
-
--- Course Categories
-CREATE TABLE course_categories (
-  id SERIAL PRIMARY KEY,
-  title VARCHAR(255) NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Course Subcategories
-CREATE TABLE course_subcategories (
-  id SERIAL PRIMARY KEY,
-  category_id INTEGER REFERENCES course_categories(id) ON DELETE CASCADE,
-  title VARCHAR(255) NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
 -- Courses
 CREATE TABLE courses (
   id SERIAL PRIMARY KEY,
@@ -171,6 +147,31 @@ CREATE TABLE courses (
   visibility_status VARCHAR(20) DEFAULT 'draft',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Enrollments
+CREATE TABLE enrollments (
+  id SERIAL PRIMARY KEY,
+  student_id INTEGER REFERENCES users(id),
+  course_id INTEGER REFERENCES courses(id),
+  enrollment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'completed', 'dropped')),
+  UNIQUE(student_id, course_id)
+);
+
+-- Course Categories
+CREATE TABLE course_categories (
+  id SERIAL PRIMARY KEY,
+  title VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Course Subcategories
+CREATE TABLE course_subcategories (
+  id SERIAL PRIMARY KEY,
+  category_id INTEGER REFERENCES course_categories(id) ON DELETE CASCADE,
+  title VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Course Modules
@@ -312,7 +313,6 @@ CREATE TABLE test_attempts (
 -- Indexes
 CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_students_email ON students(email);
-CREATE INDEX idx_students_name ON students(first_name);
 CREATE INDEX idx_courses_instructor ON courses(instructor_id);
 CREATE INDEX idx_enrollments_student ON enrollments(student_id);
 CREATE INDEX idx_enrollments_course ON enrollments(course_id);
@@ -411,19 +411,6 @@ CREATE TABLE coupons (
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
 );
-
-CREATE TABLE gallery_items (
-  id SERIAL PRIMARY KEY,
-  name TEXT NOT NULL,
-  image_url TEXT NOT NULL,
-  type TEXT DEFAULT 'event',
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-
-
-
-
 
 
 
