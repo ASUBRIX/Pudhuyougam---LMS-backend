@@ -1,47 +1,41 @@
-var createError = require('http-errors');
-var express = require('express');
-var path = require('path');
-var cookieParser = require('cookie-parser');
-var logger = require('morgan');
+const createError = require('http-errors');
+const express = require('express');
+const path = require('path');
+const cookieParser = require('cookie-parser');
+const logger = require('morgan');
 const cors = require('cors');
 
-// Initialize database connection
+
 require('./config/database');
 
-var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
-var testsRouter = require('./routes/tests');
-var studentsRouter = require('./routes/students');
-var settingsRouter = require('./routes/settings');
-var termsRouter = require('./routes/termsConditions');
-var bannersRouter = require('./routes/banners');
-var facultyRouter = require('./routes/faculty');
-var blogsRouter = require("./routes/blogs");
-var announcementsRouter = require('./routes/announcements.js');
-var currentAffairs = require('./routes/currentAffairs.js');
-var courseRouter = require('./routes/course.js');
-var coursePricingRouter = require('./routes/coursePricingPlans');
-var courseContentRouter = require('./routes/courseContent');
-var couponsRouter = require('./routes/coupons.js');
-const enquiryRoutes = require('./routes/enquiry'); 
+const indexRouter = require('./routes/index');
+const usersRouter = require('./routes/users');
+const testsRouter = require('./routes/tests');
+const studentsRouter = require('./routes/students');
+const settingsRouter = require('./routes/settings');
+const termsRouter = require('./routes/termsConditions');
+const bannersRouter = require('./routes/banners');
+const facultyRouter = require('./routes/faculty');
+const blogsRouter = require("./routes/blogs");
+const announcementsRouter = require('./routes/announcements.js');
+const currentAffairs = require('./routes/currentAffairs.js');
+const courseRouter = require('./routes/course.js');
+const coursePricingRouter = require('./routes/coursePricingPlans');
+const courseContentRouter = require('./routes/courseContent');
+const couponsRouter = require('./routes/coupons.js');
+const enquiryRoutes = require('./routes/enquiry');
 const studentManagementRouter = require("./routes/studentManagement.js");
 
-
-
-
-
-var app = express();
+const app = express();
 
 app.use(cors({
-  origin: '*', 
+  origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'auth_key']
 }));
 
-
 app.options('*', cors());
 
-// view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 
@@ -59,32 +53,28 @@ app.use('/api/settings', settingsRouter);
 app.use('/api/legal', termsRouter);
 app.use('/api/banners', bannersRouter);
 app.use('/api/faculties', facultyRouter);
-app.use("/api/blogs",blogsRouter);
-app.use('/api/announcements',announcementsRouter);
-app.use("/api/current-affairs",currentAffairs);
-app.use('/api/courses',courseRouter);
+app.use("/api/blogs", blogsRouter);
+app.use('/api/announcements', announcementsRouter);
+app.use("/api/current-affairs", currentAffairs);
+app.use('/api/courses', courseRouter);
 app.use('/api/course-content', courseContentRouter);
 app.use('/api/course-pricing', coursePricingRouter);
-app.use('/api/coupons',couponsRouter);
-app.use('/api/contact-enquiry',enquiryRoutes);
-app.use('/api/student-management',studentManagementRouter);
+app.use('/api/coupons', couponsRouter);
+app.use('/api/contact-enquiry', enquiryRoutes);
+app.use('/api/student-management', studentManagementRouter);
 
+app.get('/health', (req, res) => res.sendStatus(200));
 
-
-// catch 404 and forward to error handler
 app.use(function(req, res, next) {
   next(createError(404));
 });
 
-// error handler
 app.use(function(err, req, res, next) {
-  // set locals, only providing error in development
   res.locals.message = err.message;
   res.locals.error = req.app.get('env') === 'development' ? err : {};
-  res.locals.title = 'Error'; // Add title for error page
-  res.locals.content = 'error'; // Specify the content template
+  res.locals.title = 'Error'; 
+  res.locals.content = 'error';
 
-  // render the error page
   res.status(err.status || 500);
   res.render('layout');
 });
