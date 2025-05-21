@@ -31,6 +31,7 @@ DROP TABLE IF EXISTS current_affairs CASCADE;
 DROP TABLE IF EXISTS enquiries CASCADE;
 DROP TABLE IF EXISTS coupons CASCADE;
 DROP TABLE IF EXISTS students CASCADE;
+DROP TABLE IF EXISTS gallery_items;
 
 -- =====================
 -- CREATE TABLES
@@ -41,7 +42,7 @@ CREATE TABLE banners (
   id SERIAL PRIMARY KEY,
   title VARCHAR(255) NOT NULL,
   description TEXT,
-  image_path VARCHAR(255),
+  image_url VARCHAR(255),
   link VARCHAR(255),
   status VARCHAR(50) DEFAULT 'Active',
   sort_order INTEGER,
@@ -410,6 +411,15 @@ CREATE TABLE coupons (
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
 );
+
+CREATE TABLE gallery_items (
+  id SERIAL PRIMARY KEY,
+  name TEXT NOT NULL,
+  image_url TEXT NOT NULL,
+  type TEXT DEFAULT 'event',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 
 
 

@@ -25,6 +25,9 @@ const courseContentRouter = require('./routes/courseContent');
 const couponsRouter = require('./routes/coupons.js');
 const enquiryRoutes = require('./routes/enquiry');
 const studentManagementRouter = require("./routes/studentManagement.js");
+const galleryRouter = require('./routes/gallery');
+
+
 
 const app = express();
 
@@ -44,6 +47,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/uploads/gallery', express.static(path.join(__dirname, 'public/uploads/gallery')));
+
 
 app.use('/', indexRouter);
 app.use('/api/users', usersRouter);
@@ -62,9 +67,9 @@ app.use('/api/course-pricing', coursePricingRouter);
 app.use('/api/coupons', couponsRouter);
 app.use('/api/contact-enquiry', enquiryRoutes);
 app.use('/api/student-management', studentManagementRouter);
+app.use('/api/gallery', galleryRouter);
 
 app.get('/health', (req, res) => res.sendStatus(200));
-
 app.use(function(req, res, next) {
   next(createError(404));
 });
