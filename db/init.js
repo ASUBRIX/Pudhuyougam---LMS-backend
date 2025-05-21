@@ -3,8 +3,10 @@
 const { Pool } = require('pg');
 require('dotenv').config();
 
+const TARGET_DB = process.env.DB_NAME || 'lms_db';
+
 async function initializeDatabase() {
-    // First connect to postgres database to create lms database
+    // 1. Connect to 'postgres' database to create the TARGET_DB if not exists
     const pgPool = new Pool({
         user: process.env.DB_USER || 'postgres',
         host: process.env.DB_HOST || 'localhost',
@@ -14,47 +16,44 @@ async function initializeDatabase() {
     });
 
     try {
-        // Create database if it doesn't exist
         await pgPool.query(`
-            CREATE DATABASE lms
+            CREATE DATABASE ${TARGET_DB}
             WITH 
             OWNER = postgres
             ENCODING = 'UTF8'
             TEMPLATE template0
             CONNECTION LIMIT = -1;
         `);
-        console.log('Created lms database');
+        console.log(`Created ${TARGET_DB} database`);
     } catch (error) {
-        if (error.code !== '42P04') { // 42P04 is the error code when database already exists
-            console.error('Error creating database:', error);
+        if (error.code !== '42P04') { // 42P04 means database already exists
+            console.error(`Error creating database:`, error);
         } else {
-            console.log('Database lms already exists');
+            console.log(`Database ${TARGET_DB} already exists`);
         }
     }
 
-    // Close postgres connection
     await pgPool.end();
 
-    // Connect to lms database
-    const lmsPool = new Pool({
+    // 2. Connect to the TARGET_DB to initialize schema
+    const lmsDbPool = new Pool({
         user: process.env.DB_USER || 'postgres',
         host: process.env.DB_HOST || 'localhost',
-        database: 'lms',
+        database: TARGET_DB,
         password: process.env.DB_PASSWORD || 'postgres',
         port: process.env.DB_PORT || 5432,
     });
 
     try {
-        // Read and execute the schema
         const fs = require('fs');
         const path = require('path');
         const schema = fs.readFileSync(path.join(__dirname, 'init.sql'), 'utf8');
-        await lmsPool.query(schema);
+        await lmsDbPool.query(schema);
         console.log('Schema initialized successfully');
     } catch (error) {
         console.error('Error initializing schema:', error);
     } finally {
-        await lmsPool.end();
+        await lmsDbPool.end();
     }
 }
 
