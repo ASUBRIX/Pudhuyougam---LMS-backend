@@ -26,6 +26,7 @@ const couponsRouter = require('./routes/coupons.js');
 const enquiryRoutes = require('./routes/enquiry');
 const studentManagementRouter = require("./routes/studentManagement.js");
 const galleryRouter = require('./routes/gallery');
+const noticeBoardRouter = require('./routes/noticeBoard.js');
 
 // user routes
 const slideRouter = require('./routes/slide.js');
@@ -73,6 +74,7 @@ app.use('/api/student-management', studentManagementRouter);
 app.use('/api/gallery', galleryRouter);
 // users
 app.use("/api/slides",slideRouter);
+app.use("/api/notice-board",noticeBoardRouter);
 
 app.get('/health', (req, res) => res.sendStatus(200));
 app.use(function(req, res, next) {
