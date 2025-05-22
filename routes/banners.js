@@ -204,4 +204,15 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+// routes/home.js
+router.get('/banners', async (req, res) => {
+  const banners = await Banner.findAll({
+    where: { status: 'Active' },
+    order: [['sort_order', 'ASC']],
+    attributes: ['id', 'title', 'description', 'image_url', 'link'],
+  });
+  res.json(banners);
+});
+
+
 module.exports = router; 

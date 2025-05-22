@@ -1,8 +1,6 @@
-// config/database.js
 const { Pool } = require("pg");
 require("dotenv").config();
 
-// Create a new pool with better connection management
 const pool = new Pool({
   user:
     process.env.NODE_ENV == "production"

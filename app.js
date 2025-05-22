@@ -27,6 +27,9 @@ const enquiryRoutes = require('./routes/enquiry');
 const studentManagementRouter = require("./routes/studentManagement.js");
 const galleryRouter = require('./routes/gallery');
 
+// user routes
+const slideRouter = require('./routes/slide.js');
+
 
 
 const app = express();
@@ -68,6 +71,8 @@ app.use('/api/coupons', couponsRouter);
 app.use('/api/contact-enquiry', enquiryRoutes);
 app.use('/api/student-management', studentManagementRouter);
 app.use('/api/gallery', galleryRouter);
+// users
+app.use("/api/slides",slideRouter);
 
 app.get('/health', (req, res) => res.sendStatus(200));
 app.use(function(req, res, next) {
@@ -85,5 +90,3 @@ app.use(function(err, req, res, next) {
 });
 
 module.exports = app;
-
-// test
