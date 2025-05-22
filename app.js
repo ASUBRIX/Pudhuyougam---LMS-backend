@@ -57,7 +57,7 @@ app.use('/api/students', studentsRouter);
 app.use('/api/settings', settingsRouter);
 app.use('/api/legal', termsRouter);
 app.use('/api/banners', bannersRouter);
-app.use('/api/faculties', facultyRouter);
+app.use('/api/faculty', facultyRouter);
 app.use("/api/blogs", blogsRouter);
 app.use('/api/announcements', announcementsRouter);
 app.use("/api/current-affairs", currentAffairs);
