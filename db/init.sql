@@ -332,7 +332,6 @@ CREATE TABLE gallery_items (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Faculties
 CREATE TABLE faculties (
   id SERIAL PRIMARY KEY,
   faculty_id VARCHAR(20) UNIQUE NOT NULL,
@@ -345,10 +344,12 @@ CREATE TABLE faculties (
   qualification TEXT,
   experience TEXT,
   avatar TEXT,
+  bio TEXT,  -- <--- Add this line
   joining_date DATE DEFAULT CURRENT_DATE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
 
 -- Blogs
 CREATE TABLE blogs (

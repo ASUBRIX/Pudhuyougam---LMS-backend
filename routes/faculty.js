@@ -5,6 +5,7 @@ const { query } = require('../config/database');
 // GET all faculties
 router.get('/', async (req, res) => {
   try {
+    // bio is included by SELECT *
     const result = await query('SELECT * FROM faculties ORDER BY id DESC');
     res.json(result.rows);
   } catch (err) {
@@ -19,16 +20,16 @@ router.post('/', async (req, res) => {
   
   const {
     name, email, phone, department, designation,
-    status, qualification, experience, avatar, joiningDate, facultyId
+    status, qualification, experience, avatar, joiningDate, facultyId, bio
   } = req.body;
 
   try {
     const result = await query(
       `INSERT INTO faculties 
-        (name, email, phone, department, designation, status, qualification, experience, avatar, joining_date, faculty_id) 
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+        (name, email, phone, department, designation, status, qualification, experience, avatar, joining_date, faculty_id, bio) 
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
        RETURNING *`,
-      [name, email, phone, department, designation, status, qualification, experience, avatar, joiningDate, facultyId]
+      [name, email, phone, department, designation, status, qualification, experience, avatar, joiningDate, facultyId, bio]
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
@@ -42,7 +43,7 @@ router.put('/:id', async (req, res) => {
   const { id } = req.params;
   const {
     name, email, phone, department, designation,
-    status, qualification, experience, avatar, joiningDate
+    status, qualification, experience, avatar, joiningDate, bio
   } = req.body;
 
   try {
@@ -57,10 +58,11 @@ router.put('/:id', async (req, res) => {
         qualification = $7,
         experience = $8,
         avatar = $9,
-        joining_date = $10
-       WHERE id = $11
+        joining_date = $10,
+        bio = $11
+       WHERE id = $12
        RETURNING *`,
-      [name, email, phone, department, designation, status, qualification, experience, avatar, joiningDate, id]
+      [name, email, phone, department, designation, status, qualification, experience, avatar, joiningDate, bio, id]
     );
     res.json(result.rows[0]);
   } catch (err) {
