@@ -5,7 +5,7 @@ const path = require('path');
 const fs = require('fs');
 const { query } = require('../config/database');
 
-// Setup storage for gallery uploads
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const uploadPath = path.join(__dirname, '../public/uploads/gallery');
@@ -20,12 +20,10 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-// 📸 GET all gallery items
+
 router.get('/', async (req, res) => {
   try {
     const result = await query('SELECT * FROM gallery_items ORDER BY created_at DESC');
-
-    // Prepend full host path to image_url
     const host = `${req.protocol}://${req.get('host')}`;
     const formatted = result.rows.map(img => ({
       ...img,
@@ -51,8 +49,6 @@ router.post('/upload', upload.array('images', 10), async (req, res) => {
     const insertSQL = `INSERT INTO gallery_items (name, image_url) VALUES ${values} RETURNING *`;
 
     const result = await query(insertSQL);
-
-    // Prepend host for each image
     const host = `${req.protocol}://${req.get('host')}`;
     const formatted = result.rows.map(img => ({
       ...img,
@@ -65,6 +61,7 @@ router.post('/upload', upload.array('images', 10), async (req, res) => {
     res.status(500).json({ error: 'Failed to upload images' });
   }
 });
+
 
 // 🗑️ DELETE image by ID
 router.delete('/:id', async (req, res) => {
@@ -84,6 +81,7 @@ router.delete('/:id', async (req, res) => {
     res.status(500).json({ error: 'Failed to delete image' });
   }
 });
+
 
 module.exports = router;
 
