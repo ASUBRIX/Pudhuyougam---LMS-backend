@@ -18,7 +18,6 @@ const userSettingsRoutes = require('./routes/user/settings');
 
 
 
-
 // Admin routes
 const adminAnnouncementRoutes = require('./routes/admin/announcement');
 const adminBlogRoutes = require('./routes/admin/blog');

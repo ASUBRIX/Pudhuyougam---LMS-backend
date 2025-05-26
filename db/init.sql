@@ -1,3 +1,4 @@
+SET client_min_messages TO warning;
 -- ============================
 -- DROP TABLES (in dependency order)
 -- ============================
@@ -107,9 +108,12 @@ CREATE TABLE users (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+
 CREATE TABLE students (
   id SERIAL PRIMARY KEY,
-  name VARCHAR(100) NOT NULL,
+  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+  first_name VARCHAR(50) NOT NULL,
+  last_name VARCHAR(50) NOT NULL,
   email VARCHAR(100) NOT NULL UNIQUE,
   phone VARCHAR(20),
   enrollment_date DATE NOT NULL,
@@ -117,10 +121,11 @@ CREATE TABLE students (
   semester VARCHAR(50),
   year VARCHAR(50),
   status VARCHAR(20) DEFAULT 'active',
-  courses TEXT[],  
+  courses TEXT[],
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
 
 -- Courses
 CREATE TABLE courses (
