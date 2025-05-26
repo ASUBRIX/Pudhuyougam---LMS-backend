@@ -16,14 +16,14 @@ const io = new Server(server, {
 });
 
 io.on('connection', (socket) => {
-  console.log(`🟢 Student connected: ${socket.id}`);
+  // console.log(`🟢 Student connected: ${socket.id}`);
 
   socket.on('chat_message', (msg) => {
     socket.broadcast.emit('chat_message', msg);
   });
 
   socket.on('disconnect', () => {
-    console.log(`🔴 Student disconnected: ${socket.id}`);
+    // console.log(`🔴 Student disconnected: ${socket.id}`);
   });
 });
 

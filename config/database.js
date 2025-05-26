@@ -19,16 +19,15 @@ const pool = new Pool({
       ? process.env.DB_PASSWORD
       : process.env.DB_LOCAL_PASSWORD,
   port: process.env.DB_PORT || 5432,
-  max: process.env.DB_MAX_CONNECTIONS || 10, // Reduced to avoid connection overload
+  max: process.env.DB_MAX_CONNECTIONS || 10, 
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 5000, // Increased from 2000 to give more time for connection
-  // Retry strategy
-  retryDelay: 1000, // Retry after 1s
+  connectionTimeoutMillis: 5000,
+  retryDelay: 1000,
   maxRetryAttempts: 3,
 });
 
 pool.connect().then(() => {
-  console.log("Connected to PostgreSQL database");
+  console.log("Connected to PostgreSQL");
 });
 // Test the connection
 // pool.on("connect", () => {
@@ -62,3 +61,5 @@ module.exports = {
   pool,
   // connect
 };
+
+
