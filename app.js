@@ -16,8 +16,6 @@ const userBannerRoutes = require('./routes/user/banner');
 const currentAffairsRoutes = require('./routes/user/currentAffairs');
 const userSettingsRoutes = require('./routes/user/settings');
 
-
-
 // Admin routes
 const adminAnnouncementRoutes = require('./routes/admin/announcement');
 const adminBlogRoutes = require('./routes/admin/blog');
@@ -36,40 +34,13 @@ const adminStudentRoutes = require('./routes/admin/studentManagement');
 const adminSettingRoutes = require('./routes/admin/setting');
 
 
-// --- LEGACY ROUTES (commented out, for future removal) ---
-// const indexRouter = require('./routes/index');
-// const usersRouter = require('./routes/users');
-// const testsRouter = require('./routes/tests');
-// const studentsRouter = require('./routes/students');
-// const settingsRouter = require('./routes/settings');
-// const termsRouter = require('./routes/termsConditions');
-// const bannersRouter = require('./routes/banners');
-// const facultyRouter = require('./routes/faculty');
-// const blogsRouter = require("./routes/blogs");
-// const announcementsRouter = require('./routes/announcements.js');
-// const currentAffairs = require('./routes/currentAffairs.js');
-// const courseRouter = require('./routes/course.js');
-// const coursePricingRouter = require('./routes/coursePricingPlans');
-// const courseContentRouter = require('./routes/courseContent');
-// const couponsRouter = require('./routes/coupons.js');
-// const galleryRouter = require('./routes/gallery');
-// const noticeBoardRouter = require('./routes/noticeBoard.js');
-// const blogsUserRouter = require('./routes/blogUser.js');
-// const instructorsRouter = require("./routes/instructors.js");
-// const slideRouter = require('./routes/slide.js');
-
-// --- STATIC FILES ---
+// --- Static Files ---
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads/gallery', express.static(path.join(__dirname, 'public/uploads/gallery')));
 
-// --- MIDDLEWARE ---
-app.use(cors({
-  origin: '*',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'auth_key']
-}));
-app.options('*', cors());
 
+app.use(cors({origin: '*',methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],allowedHeaders: ['Content-Type', 'Authorization', 'auth_key']}));
+app.options('*', cors());
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 app.use(logger('dev'));
@@ -77,18 +48,16 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
-
 // Public/User Routes
-app.use('/api', userHomeRoutes);                
+app.use('/api', userHomeRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/settings', userSettingsRoutes);                 
 app.use('/api/blogs', userBlogRoutes);          
 app.use('/api/enquiries', userEnquiryRoutes);   
-app.use('/api/users', userRoutes);              
 app.use('/api/instructors', userInstructorRoutes);
 app.use('/api/banners', userBannerRoutes); 
 app.use('/api/student', userStudentRoutes);
 app.use('/api/current-affairs',currentAffairsRoutes);
-app.use('/api/settings', userSettingsRoutes);
-
 
 
 // Admin routes
@@ -112,7 +81,6 @@ app.use('/api/admin/settings', adminSettingRoutes);
 app.use((req, res, next) => {
   res.status(404).json({ error: 'Endpoint not found' });
 });
-
 
 
 module.exports = app;

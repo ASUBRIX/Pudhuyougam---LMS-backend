@@ -149,6 +149,36 @@ class Banner {
             throw error;
         }
     }
+
+    // In models/user.js
+static async generateOTP(phone_number) {
+  try {
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otp_expires = new Date(Date.now() + 10 * 60 * 1000);
+
+    // Check if user exists
+    let user = await query('SELECT * FROM users WHERE phone_number = $1', [phone_number]);
+    if (user.rows.length === 0) {
+      // Create new temp user with just phone and otp
+      await query(
+        'INSERT INTO users (phone_number, otp, otp_expires, role) VALUES ($1, $2, $3, $4)',
+        [phone_number, otp, otp_expires, 'student']
+      );
+    } else {
+      // Update existing user OTP
+      await query(
+        'UPDATE users SET otp = $1, otp_expires = $2 WHERE phone_number = $3',
+        [otp, otp_expires, phone_number]
+      );
+    }
+    return otp;
+  } catch (err) {
+    console.error(`Error generating OTP for phone ${phone_number}:`, err);
+    throw err;
+  }
+}
+
+
 }
 
 module.exports = Banner; 

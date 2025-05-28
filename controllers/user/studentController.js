@@ -49,7 +49,7 @@ const deleteStudent = async (req, res) => {
   }
 };
 
-// --- Profile endpoints ---
+
 
 const getProfile = async (req, res) => {
   try {

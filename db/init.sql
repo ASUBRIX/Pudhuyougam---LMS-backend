@@ -126,6 +126,13 @@ CREATE TABLE students (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE user_otps (
+    phone_number VARCHAR(20) PRIMARY KEY,
+    otp VARCHAR(6),
+    otp_expires TIMESTAMP
+);
+
+
 
 -- Courses
 CREATE TABLE courses (
