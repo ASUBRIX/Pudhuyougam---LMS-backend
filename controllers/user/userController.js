@@ -1,56 +1,52 @@
-const User = require('../../models/user');
-const Student = require('../../models/student');
-const { sendOTP } = require('../../config/sms'); 
+const User = require("../../models/user");
+const Student = require("../../models/student");
+const { sendOTP } = require("../../config/sms");
+const jwt = require("jsonwebtoken");
+
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || "refresh_secret_fallback";
 
 // Send OTP for Mobile Login/Register
 const requestOTP = async (req, res) => {
   try {
     const { phone_number } = req.body;
-    console.log(phone_number);
-    
-    if (!phone_number) return res.status(400).json({ error: 'Phone number is required.' });
-    const otp = await User.generateOTP(phone_number); 
+    if (!phone_number)
+      return res.status(400).json({ error: "Phone number is required." });
+    const otp = await User.generateOTP(phone_number);
     await sendOTP(phone_number, otp);
-    res.status(200).json({ message: 'OTP sent' });
+    res.status(200).json({ message: "OTP sent" });
   } catch (err) {
-    console.error('OTP request error:', err);
-    res.status(500).json({ error: 'OTP generation failed.' });
+    console.error("OTP request error:", err);
+    res.status(500).json({ error: "OTP generation failed." });
   }
 };
-
-
-async function sendOtpController(req, res) {
-  const { phone_number, otp } = req.body;
-  try {
-    await sendOTP(phone_number, otp);
-    res.json({ message: 'OTP sent (trial: only to verified numbers).' });
-  } catch (err) {
-    console.error('SMS send error:', err.message);
-    res.status(500).json({ error: 'Failed to send OTP. Make sure number is verified in Twilio.' });
-  }
-}
-
-
-
-
-
 
 // Verify OTP for mobile login/register
 const verifyOTP = async (req, res) => {
   try {
     const { phone_number, otp } = req.body;
-    if (!phone_number || !otp) return res.status(400).json({ error: 'Phone number and OTP are required.' });
+    if (!phone_number || !otp)
+      return res.status(400).json({ error: "Phone number and OTP are required." });
 
     const result = await User.verifyOTP(phone_number, otp);
-    if (!result) return res.status(401).json({ error: 'Invalid or expired OTP.' });
+    if (!result) return res.status(401).json({ error: "Invalid or expired OTP." });
+
     if (result.user && result.user.first_name) {
-      res.status(200).json(result);
+      // User exists, create JWTs
+      const accessToken = User.generateAccessToken(result.user);
+      const refreshToken = User.generateRefreshToken(result.user);
+      res.cookie("refreshToken", refreshToken, {
+        httpOnly: true,
+        secure: true,      // Set to true only if using HTTPS!
+        sameSite: "Strict",
+        maxAge: 15 * 24 * 60 * 60 * 1000,
+      });
+      res.status(200).json({ user: result.user, accessToken });
     } else {
       res.status(200).json({ exists: false, phone_number });
     }
   } catch (err) {
-    console.error('OTP verify error:', err);
-    res.status(500).json({ error: 'OTP verification failed.' });
+    console.error("OTP verify error:", err);
+    res.status(500).json({ error: "OTP verification failed." });
   }
 };
 
@@ -59,14 +55,18 @@ const register = async (req, res) => {
   try {
     const { first_name, last_name, email, password_hash, phone_number, role } = req.body;
     if (!first_name || !last_name || !email || !password_hash) {
-      return res.status(400).json({ error: 'First name, last name, email, and password are required.' });
+      return res.status(400).json({
+        error: "First name, last name, email, and password are required.",
+      });
     }
 
     const existingEmail = await User.findByEmail(email);
-    if (existingEmail) return res.status(400).json({ error: 'Email already exists.' });
+    if (existingEmail)
+      return res.status(400).json({ error: "Email already exists." });
 
     const existingPhone = await User.findByPhone(phone_number);
-    if (existingPhone && existingPhone.first_name) return res.status(400).json({ error: 'Phone number already exists.' });
+    if (existingPhone && existingPhone.first_name)
+      return res.status(400).json({ error: "Phone number already exists." });
 
     // Create new user
     const user = await User.create({
@@ -75,11 +75,11 @@ const register = async (req, res) => {
       email,
       password_hash,
       phone_number,
-      role: role || 'student'
+      role: role || "student",
     });
 
-    //Create new student
-    if (user.role === 'student') {
+    // Create new student
+    if (user.role === "student") {
       await Student.create({
         userId: user.id,
         firstName: first_name,
@@ -87,17 +87,30 @@ const register = async (req, res) => {
         email,
         phone: phone_number,
         enrollmentDate: new Date(),
-        status: 'active',
-        program: '',
-        semester: '',
-        year: '',
-        courses: null
+        status: "active",
+        program: "",
+        semester: "",
+        year: "",
+        courses: null,
       });
     }
-    res.status(201).json(user);
+
+    const accessToken = User.generateAccessToken(user);
+    const refreshToken = User.generateRefreshToken(user);
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "Strict",
+      maxAge: 15 * 24 * 60 * 60 * 1000,
+    });
+    console.log(user);
+    console.log(accessToken);
+    
+    
+    res.status(200).json({ user, accessToken });
   } catch (err) {
-    console.error('User registration error:', err);
-    res.status(500).json({ error: 'User registration failed.' });
+    console.error("User registration error:", err);
+    res.status(500).json({ error: "User registration failed." });
   }
 };
 
@@ -106,22 +119,41 @@ const loginWithEmail = async (req, res) => {
   try {
     const { email, password_hash } = req.body;
     if (!email || !password_hash) {
-      return res.status(400).json({ error: 'Email and password are required.' });
+      return res.status(400).json({ error: "Email and password are required." });
     }
 
     const result = await User.verifyEmailPassword(email, password_hash);
     if (!result) {
-      return res.status(401).json({ error: 'Invalid email or password.' });
+      return res.status(401).json({ error: "Invalid email or password." });
     }
 
-    res.status(200).json(result);
+    const accessToken = User.generateAccessToken(result.user);
+    const refreshToken = User.generateRefreshToken(result.user);
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "Strict",
+      maxAge: 15 * 24 * 60 * 60 * 1000,
+    });
+    res.status(200).json({ user: result.user, accessToken });
   } catch (err) {
-    console.error('Login error:', err);
-    res.status(500).json({ error: 'Login failed.' });
+    console.error("Login error:", err);
+    res.status(500).json({ error: "Login failed." });
   }
 };
 
-
+// Refresh token endpoint
+const refreshAccessToken = (req, res) => {
+  const refreshToken = req.cookies.refreshToken;
+  if (!refreshToken) return res.status(401).json({ error: "No refresh token provided" });
+  try {
+    const userData = jwt.verify(refreshToken, JWT_REFRESH_SECRET);
+    const newAccessToken = User.generateAccessToken(userData);
+    res.json({ accessToken: newAccessToken });
+  } catch (err) {
+    res.status(403).json({ error: "Invalid or expired refresh token" });
+  }
+};
 
 // Get all users (for admin)
 const getAllUsers = async (req, res) => {
@@ -129,7 +161,7 @@ const getAllUsers = async (req, res) => {
     const users = await User.findAll();
     res.status(200).json(users);
   } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch users.' });
+    res.status(500).json({ error: "Failed to fetch users." });
   }
 };
 
@@ -137,19 +169,19 @@ const getAllUsers = async (req, res) => {
 const getProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
-    if (!user) return res.status(404).json({ error: 'User not found.' });
+    if (!user) return res.status(404).json({ error: "User not found." });
     res.status(200).json(user);
   } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch user.' });
+    res.status(500).json({ error: "Failed to fetch user." });
   }
 };
-
 
 module.exports = {
   requestOTP,
   verifyOTP,
   register,
   loginWithEmail,
-  getAllUsers,    
-  getProfile     
+  refreshAccessToken,
+  getAllUsers,
+  getProfile,
 };
