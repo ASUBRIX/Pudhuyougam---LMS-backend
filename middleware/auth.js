@@ -4,6 +4,8 @@ const { pool, query } = require('../config/database');
 const isAuthDisabled = process.env.DISABLE_AUTH === 'true';
 const JWT_SECRET = process.env.JWT_SECRET || 'yoursecretkey';
 
+
+
 const auth = (req, res, next) => {
   if (isAuthDisabled) {
     req.user = { id: 1, role: 'admin', first_name: 'Test', email: 'test@example.com' };

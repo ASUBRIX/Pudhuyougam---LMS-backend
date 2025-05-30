@@ -6,7 +6,7 @@ const logger = require('morgan');
 const cookieParser = require('cookie-parser');
 require('./config/database');
 
-// Public/User Routes
+// --------- ROUTE IMPORTS ----------
 const userHomeRoutes = require('./routes/user/home');
 const userBlogRoutes = require('./routes/user/blog');
 const userEnquiryRoutes = require('./routes/user/enquiry');
@@ -16,8 +16,8 @@ const userBannerRoutes = require('./routes/user/banner');
 const currentAffairsRoutes = require('./routes/user/currentAffairs');
 const userSettingsRoutes = require('./routes/user/settings');
 const slidesRoutes = require("./routes/user/banner");
+const userProfileRoutes = require("./routes/user/userProfile");
 
-// Admin routes
 const adminAnnouncementRoutes = require('./routes/admin/announcement');
 const adminBlogRoutes = require('./routes/admin/blog');
 const adminCouponRoutes = require('./routes/admin/coupon');
@@ -34,13 +34,10 @@ const userStudentRoutes = require('./routes/user/student');
 const adminStudentRoutes = require('./routes/admin/studentManagement');
 const adminSettingRoutes = require('./routes/admin/setting');
 
-
-// --- Static Files ---
+// --------- MIDDLEWARE ----------
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads/gallery', express.static(path.join(__dirname, 'public/uploads/gallery')));
-
-
-app.use(cors({origin: '*',methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],allowedHeaders: ['Content-Type', 'Authorization', 'auth_key']}));
+app.use(cors({ origin: '*', methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], allowedHeaders: ['Content-Type', 'Authorization', 'auth_key'] }));
 app.options('*', cors());
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
@@ -49,13 +46,11 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
+// --------- HEALTH & ROOT ----------
 app.get('/health', (req, res) => res.sendStatus(200));
-app.get('/', (req, res) => {
-  res.send('Welcome to Pudhuyugam LMS Backend API');
-});
+app.get('/', (req, res) => res.send('Welcome to Pudhuyugam LMS Backend API'));
 
-
-// Public/User Routes
+// --------- ROUTES (Public/User) ----------
 app.use('/api', userHomeRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/settings', userSettingsRoutes);                 
@@ -64,11 +59,11 @@ app.use('/api/enquiries', userEnquiryRoutes);
 app.use('/api/instructors', userInstructorRoutes);
 app.use('/api/banners', userBannerRoutes); 
 app.use('/api/student', userStudentRoutes);
-app.use('/api/current-affairs',currentAffairsRoutes);
+app.use('/api/user-profile', userProfileRoutes);
+app.use('/api/current-affairs', currentAffairsRoutes);
 app.use('/api/slides', slidesRoutes);
 
-
-// Admin routes
+// --------- ROUTES (Admin) ----------
 app.use('/api/admin/announcements', adminAnnouncementRoutes);
 app.use('/api/admin/blogs', adminBlogRoutes);
 app.use('/api/admin/coupons', adminCouponRoutes);
@@ -84,11 +79,9 @@ app.use('/api/notice-board', userNoticeBoardRoutes);
 app.use('/api/admin/students', adminStudentRoutes);
 app.use('/api/admin/settings', adminSettingRoutes);
 
-
-// --- Error Handling
+// --------- 404 ERROR HANDLER ----------
 app.use((req, res, next) => {
   res.status(404).json({ error: 'Endpoint not found' });
 });
-
 
 module.exports = app;

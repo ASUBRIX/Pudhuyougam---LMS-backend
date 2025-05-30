@@ -2,6 +2,8 @@ const User = require("../../models/user");
 const Student = require("../../models/student");
 const { sendOTP } = require("../../config/sms");
 const jwt = require("jsonwebtoken");
+const bcrypt = require('bcryptjs');
+const { query } = require('../../config/database');
 
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || "refresh_secret_fallback";
 
@@ -36,7 +38,7 @@ const verifyOTP = async (req, res) => {
       const refreshToken = User.generateRefreshToken(result.user);
       res.cookie("refreshToken", refreshToken, {
         httpOnly: true,
-        secure: true,      // Set to true only if using HTTPS!
+        secure: true,
         sameSite: "Strict",
         maxAge: 15 * 24 * 60 * 60 * 1000,
       });
@@ -59,7 +61,6 @@ const register = async (req, res) => {
         error: "First name, last name, email, and password are required.",
       });
     }
-
     const existingEmail = await User.findByEmail(email);
     if (existingEmail)
       return res.status(400).json({ error: "Email already exists." });
@@ -78,7 +79,7 @@ const register = async (req, res) => {
       role: role || "student",
     });
 
-    // Create new student
+    // Create new student if role is student
     if (user.role === "student") {
       await Student.create({
         userId: user.id,
@@ -103,10 +104,7 @@ const register = async (req, res) => {
       sameSite: "Strict",
       maxAge: 15 * 24 * 60 * 60 * 1000,
     });
-    console.log(user);
-    console.log(accessToken);
-    
-    
+
     res.status(200).json({ user, accessToken });
   } catch (err) {
     console.error("User registration error:", err);
@@ -167,12 +165,152 @@ const getAllUsers = async (req, res) => {
 
 // Get current user profile
 const getProfile = async (req, res) => {
+  console.log("Get profile function executed");
+  
   try {
-    const user = await User.findById(req.user.id);
-    if (!user) return res.status(404).json({ error: "User not found." });
-    res.status(200).json(user);
+    const userId = req.user?.id || req.userId;
+    console.log('user id:',userId);
+    
+    const result = await query(
+      `SELECT 
+        u.id AS user_id,
+        u.first_name AS user_first_name,
+        u.last_name AS user_last_name,
+        u.email AS user_email,
+        u.phone_number AS user_phone_number,
+        u.role,
+        s.id AS student_id,
+        s.first_name,
+        s.last_name,
+        s.email,
+        s.phone,
+        s.enrollment_date,
+        s.program,
+        s.semester,
+        s.year,
+        s.status,
+        s.courses,
+        s.created_at,
+        s.updated_at
+      FROM users u
+      LEFT JOIN students s ON u.id = s.user_id
+      WHERE u.id = $1`,
+      [userId]
+    );
+
+    console.log("result",result);
+    
+    if (!result.rows.length) return res.status(404).json({ error: 'User not found' });
+    res.status(200).json(result.rows[0]);
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch user." });
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
+
+const updateProfile = async (req, res) => {
+  try {
+    const userId = req.user?.id || req.userId;
+
+    // Get all possible fields from the request body
+    const {
+      first_name, last_name, email, phone_number,       // user table
+      student_first_name, student_last_name, student_email, student_phone,
+      enrollment_date, program, semester, year, status, courses // student table
+    } = req.body;
+
+    // 1. Update users table
+    const userUpdate = await query(
+      `UPDATE users SET 
+        first_name = $1, 
+        last_name = $2, 
+        email = $3, 
+        phone_number = $4, 
+        updated_at = NOW()
+       WHERE id = $5 
+       RETURNING id, first_name, last_name, email, phone_number, role`,
+      [first_name, last_name, email, phone_number, userId]
+    );
+    if (!userUpdate.rows.length) return res.status(404).json({ error: 'User not found' });
+
+    // 2. Update students table (only if a student record exists)
+    const studentResult = await query(
+      `UPDATE students SET 
+        first_name = $1,
+        last_name = $2,
+        email = $3,
+        phone = $4,
+        enrollment_date = $5,
+        program = $6,
+        semester = $7,
+        year = $8,
+        status = $9,
+        courses = $10,
+        updated_at = NOW()
+      WHERE user_id = $11
+      RETURNING *`,
+      [
+        student_first_name,
+        student_last_name,
+        student_email,
+        student_phone,
+        enrollment_date,
+        program,
+        semester,
+        year,
+        status,
+        courses,
+        userId
+      ]
+    );
+
+    // Respond with the updated user and student data
+    res.status(200).json({
+      user: userUpdate.rows[0],
+      student: studentResult.rows[0] || null
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
+// Change email
+const changeEmail = async (req, res) => {
+  try {
+    const userId = req.user?.id || req.userId;
+    const { email } = req.body;
+    const check = await query('SELECT id FROM users WHERE email = $1', [email]);
+    if (check.rows.length) return res.status(409).json({ error: 'Email already in use' });
+
+    const result = await query(
+      'UPDATE users SET email = $1, updated_at = NOW() WHERE id = $2 RETURNING id, first_name, last_name, email, phone_number, role',
+      [email, userId]
+    );
+    if (!result.rows.length) return res.status(404).json({ error: 'User not found' });
+    res.status(200).json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
+// Change password
+const changePassword = async (req, res) => {
+  try {
+    const userId = req.user?.id || req.userId;
+    const { currentPassword, newPassword } = req.body;
+
+    const userRes = await query('SELECT password_hash FROM users WHERE id = $1', [userId]);
+    if (!userRes.rows.length) return res.status(404).json({ error: 'User not found' });
+
+    const match = await bcrypt.compare(currentPassword, userRes.rows[0].password_hash);
+    if (!match) return res.status(400).json({ error: 'Incorrect current password' });
+
+    const newHash = await bcrypt.hash(newPassword, 10);
+    await query('UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2', [newHash, userId]);
+
+    res.status(200).json({ message: 'Password updated successfully' });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
   }
 };
 
@@ -184,4 +322,7 @@ module.exports = {
   refreshAccessToken,
   getAllUsers,
   getProfile,
+  updateProfile,
+  changeEmail,
+  changePassword
 };
