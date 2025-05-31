@@ -11,6 +11,7 @@ DROP TABLE IF EXISTS test_folders CASCADE;
 DROP TABLE IF EXISTS enrollments CASCADE;
 DROP TABLE IF EXISTS students CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
+DROP TABLE IF EXISTS user_otps CASCADE;
 
 DROP TABLE IF EXISTS course_contents CASCADE;
 DROP TABLE IF EXISTS course_content_folders CASCADE;
@@ -39,6 +40,10 @@ DROP TABLE IF EXISTS coupons CASCADE;
 -- =====================
 -- CREATE TABLES
 -- =====================
+
+
+
+
 
 -- Banners
 CREATE TABLE banners (
@@ -131,6 +136,18 @@ CREATE TABLE user_otps (
     otp VARCHAR(6),
     otp_expires TIMESTAMP
 );
+
+-- Create default admin user
+INSERT INTO users (first_name, last_name, email, password_hash, role, created_at)
+VALUES (
+  'Admin',
+  'User',
+  'admin@pudhuyugamacademy.com',
+  'admin@1234',
+  'admin',
+  NOW()
+)
+ON CONFLICT (email) DO NOTHING;
 
 
 
