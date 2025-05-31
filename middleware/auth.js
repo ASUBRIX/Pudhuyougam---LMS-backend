@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const JWT_SECRET = process.env.JWT_ACCESS_SECRET || 'mySecret';
 
+
 const auth = (req, res, next) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -17,11 +18,13 @@ const auth = (req, res, next) => {
   }
 };
 
+
 const requireAdmin = (req, res, next) => {
   if (!req.user || req.user.role !== 'admin') {
     return res.status(403).json({ error: 'Access denied. Admin privileges required.' });
   }
   next();
 };
+
 
 module.exports = { auth, requireAdmin };
