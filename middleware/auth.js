@@ -1,51 +1,62 @@
-const jwt = require('jsonwebtoken');
+// middleware/auth.js
+
 const { pool, query } = require('../config/database');
 
-const isAuthDisabled = process.env.DISABLE_AUTH === 'true';
-const isProd = process.env.NODE_ENV === 'production';
-const JWT_SECRET = process.env.JWT_SECRET || 'mySecret';
+const auth = async (req, res, next) => {
+    console.log('Auth middleware called');
+    console.log('Headers received:', req.headers);
+    const authKey = req.headers.auth_key;
 
-// Prevent disabling auth in production for safety!
-if (isProd && isAuthDisabled) {
-  throw new Error(
-    "FATAL: DISABLE_AUTH=true is NOT allowed in production! Remove this from your .env."
-  );
-}
+    if (!authKey) {
+        console.log('No auth_key found in headers');
+        return res.status(401).json({ error: 'Auth key is required.', code: 'AUTH_REQUIRED' });
+    }
 
-const auth = (req, res, next) => {
-  if (isAuthDisabled) {
-    // Simulate user (admin by default)
-    const role = req.headers['x-dev-role'] || req.query.role || 'admin';
-    const id = req.headers['x-dev-userid'] || req.query.userId || 1;
-    req.user = {
-      id,
-      role,
-      first_name: role === 'admin' ? 'Admin' : 'User',
-      email: `${role}@test.com`,
-    };
-    return next();
-  }
+    try {
+        // Check if auth key exists and is valid in your users table
+        const sqlQuery = `
+            SELECT u.id, u.first_name, u.last_name, u.email, u.role
+            FROM users u
+            WHERE u.auth_key = $1 
+            AND u.auth_key_expires > CURRENT_TIMESTAMP`;
+        
+        // Use the improved query function instead of direct pool access
+        const result = await query(sqlQuery, [authKey]);
 
-  // Standard JWT Auth (for production, and when not disabled)
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'JWT token required' });
-  }
-  const token = authHeader.split(' ')[1];
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-    req.user = decoded;
-    next();
-  } catch (err) {
-    return res.status(401).json({ error: 'Invalid or expired access token' });
-  }
+        if (result.rows.length === 0) {
+            // Check if the auth key exists but is expired
+            const checkExpiredQuery = `
+                SELECT u.id 
+                FROM users u 
+                WHERE u.auth_key = $1 
+                AND u.auth_key_expires <= CURRENT_TIMESTAMP`;
+            
+            const expiredResult = await query(checkExpiredQuery, [authKey]);
+            
+            if (expiredResult.rows.length > 0) {
+                console.log('Auth key is expired');
+                return res.status(401).json({ error: 'Auth key has expired. Please login again.', code: 'AUTH_EXPIRED' });
+            } else {
+                console.log('Auth key is invalid');
+                return res.status(401).json({ error: 'Invalid Auth key.', code: 'AUTH_INVALID' });
+            }
+        }
+
+        // Add user info to request object
+        req.user = result.rows[0];
+        next();
+    } catch (error) {
+        console.error('Auth middleware error:', error);
+        res.status(500).json({ error: 'Something went wrong. Please try again later.' });
+    }
 };
 
+// Middleware to check if user is admin
 const requireAdmin = (req, res, next) => {
-  if (!req.user || req.user.role !== 'admin') {
-    return res.status(403).json({ error: 'Access denied. Admin privileges required.' });
-  }
-  next();
+    if (!req.user || req.user.role !== 'admin') {
+        return res.status(403).json({ error: 'Access denied. Admin privileges required.' });
+    }
+    next();
 };
 
 module.exports = { auth, requireAdmin };
