@@ -1,6 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const enquiryController = require('../../controllers/user/enquiryController');
+const {auth} = require("../../middleware/auth");
+
+router.use(auth);
 
 // Public: Submit new enquiry
 router.post('/', enquiryController.createEnquiry);

@@ -1,8 +1,8 @@
 const { query } = require("../config/database");
 const crypto = require("crypto");
 const jwt = require("jsonwebtoken");
-const JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || "access_secret_fallback";
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || "refresh_secret_fallback";
+const JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || "mySecret";
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || "mySecret";
 global.otpStore = global.otpStore || new Map();
 
 class User {

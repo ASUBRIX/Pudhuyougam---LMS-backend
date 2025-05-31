@@ -97,7 +97,9 @@ const register = async (req, res) => {
     }
 
     const accessToken = User.generateAccessToken(user);
+    
     const refreshToken = User.generateRefreshToken(user);
+    
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: true,
@@ -126,13 +128,21 @@ const loginWithEmail = async (req, res) => {
     }
 
     const accessToken = User.generateAccessToken(result.user);
+    console.log("access token:",accessToken);
+    
     const refreshToken = User.generateRefreshToken(result.user);
+    console.log("refresh token:",refreshToken);
+    
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: true,
       sameSite: "Strict",
       maxAge: 15 * 24 * 60 * 60 * 1000,
     });
+    console.log("user log in",result.user);
+    console.log("access token",accessToken);
+    
+    
     res.status(200).json({ user: result.user, accessToken });
   } catch (err) {
     console.error("Login error:", err);
