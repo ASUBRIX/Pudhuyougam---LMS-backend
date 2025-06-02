@@ -19,6 +19,7 @@ const slidesRoutes = require("./routes/user/banner");
 const userProfileRoutes = require("./routes/user/userProfile");
 
 const adminAnnouncementRoutes = require('./routes/admin/announcement');
+const adminBannerRoutes = require('./routes/admin/banner');
 const adminBlogRoutes = require('./routes/admin/blog');
 const adminCouponRoutes = require('./routes/admin/coupon');
 const adminCourseRoutes = require('./routes/admin/course');
@@ -65,6 +66,7 @@ app.use('/api/slides', slidesRoutes);
 
 // --------- ROUTES (Admin) ----------
 app.use('/api/admin/announcements', adminAnnouncementRoutes);
+app.use('/api/admin/banners',adminBannerRoutes);
 app.use('/api/admin/blogs', adminBlogRoutes);
 app.use('/api/admin/coupons', adminCouponRoutes);
 app.use('/api/admin/courses', adminCourseRoutes);

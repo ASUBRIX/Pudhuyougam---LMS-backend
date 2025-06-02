@@ -3,7 +3,7 @@ const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const { auth, requireAdmin } = require('../../middlewares/auth');
+const { auth, requireAdmin } = require('../../middleware/auth');
 const bannerController = require('../../controllers/admin/bannerController');
 
 // Multer storage for banners
