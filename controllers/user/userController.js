@@ -60,8 +60,12 @@ const verifyOTP = async (req, res) => {
 const checkUser = async (req, res) => {
   const { phone_number, idToken } = req.body;
   try {
+    console.log("just before decoded token");
+    
     // Verify ID token from frontend with Firebase Admin SDK
     const decodedToken = await admin.auth().verifyIdToken(idToken);
+    console.log('decoded token:',decodedToken);
+    
     const firebasePhone = decodedToken.phone_number;
 
     // Extra validation: make sure it matches the claimed phone_number
@@ -74,6 +78,10 @@ const checkUser = async (req, res) => {
     if (user && user.first_name) {
       // User exists, generate and return accessToken
       const accessToken = User.generateAccessToken(user);
+      console.log("accessToken",accessToken);
+      console.log("user:",user);
+      
+      
       return res.json({ user, accessToken });
     } else {
       // Not registered yet

@@ -13,6 +13,8 @@ const getAllAnnouncements = async (req, res) => {
 // Create announcement
 const createAnnouncement = async (req, res) => {
   const { title, content, isActive } = req.body;
+  console.log(req.body);
+  
   try {
     const result = await query(
       `INSERT INTO announcements (title, content, is_active) VALUES ($1, $2, $3) RETURNING *`,

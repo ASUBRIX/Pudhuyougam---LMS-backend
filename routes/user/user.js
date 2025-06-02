@@ -8,11 +8,12 @@ router.post('/register', userController.register);
 router.post('/login/email', userController.loginWithEmail);
 router.post('/login/otp/request', userController.requestOTP);
 router.post('/login/otp/verify', userController.verifyOTP);
+router.post("/check-user", userController.checkUser);
  // Note: public for initial check
 
 // Protected routes after login
 router.use(auth);
-router.post("/check-user", userController.checkUser);
+
 
 router.get('/', requireAdmin, userController.getAllUsers);
 router.get('/me', userController.getProfile);
