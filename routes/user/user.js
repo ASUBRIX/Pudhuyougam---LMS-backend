@@ -8,14 +8,12 @@ router.post('/register', userController.register);
 router.post('/login/email', userController.loginWithEmail);
 router.post('/login/otp/request', userController.requestOTP);
 router.post('/login/otp/verify', userController.verifyOTP);
+router.post("/check-user", userController.checkUser); // Note: public for initial check
 
-// Protected routes (after login)
+// Protected routes after login
 router.use(auth);
 
-// Get all users (admin only)
 router.get('/', requireAdmin, userController.getAllUsers);
-
-// Get profile
 router.get('/me', userController.getProfile);
 
 module.exports = router;

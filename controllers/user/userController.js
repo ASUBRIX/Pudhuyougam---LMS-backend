@@ -4,6 +4,8 @@ const { sendOTP } = require("../../config/sms");
 const jwt = require("jsonwebtoken");
 const bcrypt = require('bcryptjs');
 const { query } = require('../../config/database');
+const admin = require("../../config/firebaseAdmin");
+
 
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || "refresh_secret_fallback";
 
@@ -51,6 +53,59 @@ const verifyOTP = async (req, res) => {
     res.status(500).json({ error: "OTP verification failed." });
   }
 };
+
+
+
+// Check if user exists using Firebase idToken and phone number
+const checkUser = async (req, res) => {
+  const { phone_number, idToken } = req.body;
+  try {
+    // Verify ID token from frontend with Firebase Admin SDK
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    const firebasePhone = decodedToken.phone_number;
+
+    // Extra validation: make sure it matches the claimed phone_number
+    if (!firebasePhone || firebasePhone !== phone_number) {
+      return res.status(400).json({ error: "Phone number mismatch or not verified." });
+    }
+
+    // Check user in your DB
+    const user = await User.findByPhone(firebasePhone);
+    if (user && user.first_name) {
+      // User exists, generate and return accessToken
+      const accessToken = User.generateAccessToken(user);
+      return res.json({ user, accessToken });
+    } else {
+      // Not registered yet
+      return res.json({});
+    }
+  } catch (err) {
+    console.error('checkUser error:', err);
+    res.status(401).json({ error: 'Invalid token or user check failed.' });
+  }
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // Register user (after OTP for new users)
 const register = async (req, res) => {
@@ -334,5 +389,6 @@ module.exports = {
   getProfile,
   updateProfile,
   changeEmail,
-  changePassword
+  changePassword,
+  checkUser,
 };
