@@ -37,14 +37,6 @@ DROP TABLE IF EXISTS current_affairs CASCADE;
 DROP TABLE IF EXISTS enquiries CASCADE;
 DROP TABLE IF EXISTS coupons CASCADE;
 
--- =====================
--- CREATE TABLES
--- =====================
-
-
-
-
-
 -- Banners
 CREATE TABLE banners (
   id SERIAL PRIMARY KEY,
