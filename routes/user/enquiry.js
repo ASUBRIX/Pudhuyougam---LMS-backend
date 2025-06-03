@@ -5,7 +5,7 @@ const {auth} = require("../../middleware/auth");
 
 router.use(auth);
 
-// Public: Submit new enquiry
+// Submit new enquiry
 router.post('/', enquiryController.createEnquiry);
 
 module.exports = router;
