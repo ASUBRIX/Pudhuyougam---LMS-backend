@@ -1,6 +1,6 @@
 const axios = require('axios');
 
-const BASE_URL = 'http://localhost:3000/api';
+const BASE_URL = 'http://localhost:5000/api';
 
 // Valid admin credentials
 const adminEmail = 'admin1744838249100@example.com';

@@ -373,7 +373,7 @@ CREATE TABLE faculties (
   qualification TEXT,
   experience TEXT,
   avatar TEXT,
-  bio TEXT,  -- <--- Add this line
+  bio TEXT, 
   joining_date DATE DEFAULT CURRENT_DATE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
