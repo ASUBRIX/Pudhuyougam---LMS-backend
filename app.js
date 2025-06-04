@@ -36,6 +36,9 @@ const userStudentRoutes = require('./routes/user/student');
 const adminStudentRoutes = require('./routes/admin/studentManagement');
 const adminSettingRoutes = require('./routes/admin/setting');
 
+// Import chat routes
+const userChatRoutes = require('./routes/user/chat'); // <-- Add this line
+
 // Middlewares
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads/gallery', express.static(path.join(__dirname, 'public/uploads/gallery')));
@@ -79,6 +82,9 @@ app.use('/api/admin/legal', adminTermsRoutes);
 app.use('/api/notice-board', userNoticeBoardRoutes); 
 app.use('/api/admin/students', adminStudentRoutes);
 app.use('/api/admin/settings', adminSettingRoutes);
+
+// Chat routes (should be after other routes)
+app.use('/api/chat', userChatRoutes); // <-- Add this line
 
 //  Error routes
 app.use((req, res, next) => {

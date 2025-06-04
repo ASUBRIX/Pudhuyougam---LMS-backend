@@ -433,3 +433,20 @@ CREATE TABLE coupons (
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
 );
+
+
+-- Chat Messages Table
+CREATE TABLE chat_messages (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE, -- student id
+  sender VARCHAR(20) NOT NULL CHECK (sender IN ('admin', 'student')),
+  text TEXT,
+  type VARCHAR(20) DEFAULT 'text',      -- 'text', 'file', etc.
+  file_type VARCHAR(20),
+  file_size VARCHAR(20),
+  timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Indexes for performance
+CREATE INDEX idx_chat_messages_user_id ON chat_messages(user_id);
+CREATE INDEX idx_chat_messages_sender ON chat_messages(sender);

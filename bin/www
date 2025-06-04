@@ -7,7 +7,6 @@ const port = normalizePort(process.env.PORT || '5000');
 app.set('port', port);
 
 const server = http.createServer(app);
-
 const io = new Server(server, {
   cors: {
     origin: '*',
@@ -16,14 +15,21 @@ const io = new Server(server, {
 });
 
 io.on('connection', (socket) => {
-  // console.log(`🟢 Student connected: ${socket.id}`);
+  console.log(`🟢 Client connected: ${socket.id}`);
+
+  socket.on('join_room', (userId) => {
+    socket.join(`chat_${userId}`);
+    console.log(`Socket ${socket.id} joined room chat_${userId}`);
+  });
 
   socket.on('chat_message', (msg) => {
-    socket.broadcast.emit('chat_message', msg);
+    if (msg.userId) {
+      io.to(`chat_${msg.userId}`).emit('chat_message', msg);
+    }
   });
 
   socket.on('disconnect', () => {
-    // console.log(`🔴 Student disconnected: ${socket.id}`);
+    console.log(`🔴 Client disconnected: ${socket.id}`);
   });
 });
 
@@ -33,6 +39,7 @@ server.listen(port, () => {
 server.on('error', onError);
 server.on('listening', onListening);
 
+// --- Utility functions ---
 function normalizePort(val) {
   const port = parseInt(val, 10);
   if (isNaN(port)) return val;
@@ -42,9 +49,7 @@ function normalizePort(val) {
 
 function onError(error) {
   if (error.syscall !== 'listen') throw error;
-
   const bind = typeof port === 'string' ? 'Pipe ' + port : 'Port ' + port;
-
   switch (error.code) {
     case 'EACCES':
       console.error(bind + ' requires elevated privileges');
