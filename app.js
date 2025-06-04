@@ -58,13 +58,15 @@ app.use('/api', userHomeRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/settings', userSettingsRoutes);                 
 app.use('/api/blogs', userBlogRoutes);          
-app.use('/api/enquiries', userEnquiryRoutes);   
+app.use('/api/contact-enquiry', userEnquiryRoutes);   
 app.use('/api/instructors', userInstructorRoutes);
 app.use('/api/banners', userBannerRoutes); 
 app.use('/api/student', userStudentRoutes);
 app.use('/api/user-profile', userProfileRoutes);
 app.use('/api/current-affairs', currentAffairsRoutes);
 app.use('/api/slides', slidesRoutes);
+
+
 
 //  Admin routes
 app.use('/api/admin/announcements', adminAnnouncementRoutes);
