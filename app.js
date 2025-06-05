@@ -16,7 +16,9 @@ const userBannerRoutes = require('./routes/user/banner');
 const currentAffairsRoutes = require('./routes/user/currentAffairs');
 const userSettingsRoutes = require('./routes/user/settings');
 const slidesRoutes = require("./routes/user/banner");
-const userProfileRoutes = require("./routes/user/userProfile");
+
+// Import student routes
+const studentProfileRoutes = require("./routes/user/student");
 
 // Import admin routes
 const adminAnnouncementRoutes = require('./routes/admin/announcement');
@@ -62,9 +64,11 @@ app.use('/api/contact-enquiry', userEnquiryRoutes);
 app.use('/api/instructors', userInstructorRoutes);
 app.use('/api/banners', userBannerRoutes); 
 app.use('/api/student', userStudentRoutes);
-app.use('/api/user-profile', userProfileRoutes);
 app.use('/api/current-affairs', currentAffairsRoutes);
 app.use('/api/slides', slidesRoutes);
+
+//  Student routes
+app.use('/api/student/profile', studentProfileRoutes);
 
 
 

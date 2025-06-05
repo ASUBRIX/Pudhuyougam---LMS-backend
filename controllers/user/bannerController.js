@@ -2,7 +2,6 @@ const Banner = require('../../models/banner');
 
 // Public: Get only active banners for homepage
 const getActiveBanners = async (req, res) => {
-  console.log("get actibe banners");
   
   try {
     const banners = await Banner.findAll({
@@ -10,7 +9,7 @@ const getActiveBanners = async (req, res) => {
       order: [['sort_order', 'ASC']],
       attributes: ['id', 'title', 'description', 'image_url', 'link'],
     });
-    console.log(banners);
+   
     
     res.json(banners);
   } catch (err) {
