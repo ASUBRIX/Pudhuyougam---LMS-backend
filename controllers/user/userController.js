@@ -9,81 +9,21 @@ const admin = require("../../config/firebaseAdmin");
 
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || "refresh_secret_fallback";
 
-// Send OTP for Mobile Login/Register
-const requestOTP = async (req, res) => {
-  try {
-    const { phone_number } = req.body;
-    if (!phone_number)
-      return res.status(400).json({ error: "Phone number is required." });
-    const otp = await User.generateOTP(phone_number);
-    await sendOTP(phone_number, otp);
-    res.status(200).json({ message: "OTP sent" });
-  } catch (err) {
-    console.error("OTP request error:", err);
-    res.status(500).json({ error: "OTP generation failed." });
-  }
-};
-
-// Verify OTP for mobile login/register
-const verifyOTP = async (req, res) => {
-  try {
-    const { phone_number, otp } = req.body;
-    if (!phone_number || !otp)
-      return res.status(400).json({ error: "Phone number and OTP are required." });
-
-    const result = await User.verifyOTP(phone_number, otp);
-    if (!result) return res.status(401).json({ error: "Invalid or expired OTP." });
-
-    if (result.user && result.user.first_name) {
-      // User exists, create JWTs
-      const accessToken = User.generateAccessToken(result.user);
-      const refreshToken = User.generateRefreshToken(result.user);
-      res.cookie("refreshToken", refreshToken, {
-        httpOnly: true,
-        secure: true,
-        sameSite: "Strict",
-        maxAge: 15 * 24 * 60 * 60 * 1000,
-      });
-      res.status(200).json({ user: result.user, accessToken });
-    } else {
-      res.status(200).json({ exists: false, phone_number });
-    }
-  } catch (err) {
-    console.error("OTP verify error:", err);
-    res.status(500).json({ error: "OTP verification failed." });
-  }
-};
-
-
 
 // Check if user exists using Firebase idToken and phone number
 const checkUser = async (req, res) => {
   const { phone_number, idToken } = req.body;
   try {
-    
-    // Verify ID token from frontend with Firebase Admin SDK
     const decodedToken = await admin.auth().verifyIdToken(idToken);
-    
     const firebasePhone = decodedToken.phone_number;
-
-    // Extra validation: make sure it matches the claimed phone_number
     if (!firebasePhone || firebasePhone !== phone_number) {
       return res.status(400).json({ error: "Phone number mismatch or not verified." });
     }
-
-    // Check user in your DB
     const user = await User.findByPhone(firebasePhone);
-    if (user && user.first_name) {
-      
+    if (user && user.first_name) { 
       const accessToken = User.generateAccessToken(user);
-     
-      
-     
-      
-      
       return res.json({ user, accessToken });
     } else {
-      // Not registered yet
       return res.json({});
     }
   } catch (err) {
@@ -91,27 +31,6 @@ const checkUser = async (req, res) => {
     res.status(401).json({ error: 'Invalid token or user check failed.' });
   }
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 // Register user (after OTP for new users)
@@ -131,7 +50,6 @@ const register = async (req, res) => {
     if (existingPhone && existingPhone.first_name)
       return res.status(400).json({ error: "Phone number already exists." });
 
-    // Create new user
     const user = await User.create({
       first_name,
       last_name,
@@ -141,7 +59,6 @@ const register = async (req, res) => {
       role: role || "student",
     });
 
-    // Create new student if role is student
     if (user.role === "student") {
       await Student.create({
         userId: user.id,
@@ -159,7 +76,6 @@ const register = async (req, res) => {
     }
 
     const accessToken = User.generateAccessToken(user);
-    
     const refreshToken = User.generateRefreshToken(user);
     
     res.cookie("refreshToken", refreshToken, {
@@ -176,41 +92,7 @@ const register = async (req, res) => {
   }
 };
 
-// Login with email
-const loginWithEmail = async (req, res) => {
-  try {
-    const { email, password_hash } = req.body;
-    if (!email || !password_hash) {
-      return res.status(400).json({ error: "Email and password are required." });
-    }
 
-    const result = await User.verifyEmailPassword(email, password_hash);
-    if (!result) {
-      return res.status(401).json({ error: "Invalid email or password." });
-    }
-
-    const accessToken = User.generateAccessToken(result.user);
-    console.log("access token:",accessToken);
-    
-    const refreshToken = User.generateRefreshToken(result.user);
-    console.log("refresh token:",refreshToken);
-    
-    res.cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "Strict",
-      maxAge: 15 * 24 * 60 * 60 * 1000,
-    });
-    console.log("user log in",result.user);
-    console.log("access token",accessToken);
-    
-    
-    res.status(200).json({ user: result.user, accessToken });
-  } catch (err) {
-    console.error("Login error:", err);
-    res.status(500).json({ error: "Login failed." });
-  }
-};
 
 // Refresh token endpoint
 const refreshAccessToken = (req, res) => {
@@ -387,10 +269,7 @@ const changePassword = async (req, res) => {
 };
 
 module.exports = {
-  requestOTP,
-  verifyOTP,
   register,
-  loginWithEmail,
   refreshAccessToken,
   getAllUsers,
   getProfile,

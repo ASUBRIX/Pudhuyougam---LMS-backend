@@ -1,5 +1,3 @@
-// db/init.js
-
 const { Pool } = require('pg');
 require('dotenv').config();
 

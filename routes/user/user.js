@@ -4,16 +4,12 @@ const userController = require('../../controllers/user/userController');
 const { auth, requireAdmin } = require('../../middleware/auth');
 
 // Public routes
-router.post('/register', userController.register);
-router.post('/login/email', userController.loginWithEmail);
-router.post('/login/otp/request', userController.requestOTP);
-router.post('/login/otp/verify', userController.verifyOTP);
+
 router.post("/check-user", userController.checkUser);
+router.post('/register', userController.register);
 
-// Protected routes after login
+// Protected Routes for users
 router.use(auth);
-
-
 router.get('/', requireAdmin, userController.getAllUsers);
 router.get('/me', userController.getProfile);
 

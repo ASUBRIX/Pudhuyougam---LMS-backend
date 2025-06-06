@@ -8,19 +8,22 @@ require('./config/database');
 
 // Import user routes
 const userHomeRoutes = require('./routes/user/home');
-const userBlogRoutes = require('./routes/user/blog');
 const userEnquiryRoutes = require('./routes/user/enquiry');
 const userRoutes = require('./routes/user/user');
-const userInstructorRoutes = require('./routes/user/instructor');
-const userBannerRoutes = require('./routes/user/banner');
-const currentAffairsRoutes = require('./routes/user/currentAffairs');
-const userSettingsRoutes = require('./routes/user/settings');
-const slidesRoutes = require("./routes/user/banner");
-
-// Import student routes
+const userStudentRoutes = require('./routes/user/student');
+const userChatRoutes = require('./routes/user/chat');
 const studentProfileRoutes = require("./routes/user/student");
+const userBannerRoutes = require('./routes/user/banner');
+const userNoticeBoardRoutes = require('./routes/user/noticeBoard');
+const slidesRoutes = require("./routes/user/banner");
+const userBlogRoutes = require('./routes/user/blog');
+const currentAffairsRoutes = require('./routes/user/currentAffairs');
+const userInstructorRoutes = require('./routes/user/instructor');
+const userSettingsRoutes = require('./routes/user/settings');
+
 
 // Import admin routes
+const adminRoutes = require("./routes/admin/admin");
 const adminAnnouncementRoutes = require('./routes/admin/announcement');
 const adminBannerRoutes = require('./routes/admin/banner');
 const adminBlogRoutes = require('./routes/admin/blog');
@@ -33,13 +36,9 @@ const adminEnquiryRoutes = require('./routes/admin/enquiry');
 const adminFacultyRoutes = require('./routes/admin/faculty');
 const adminGalleryRoutes = require('./routes/admin/gallery');
 const adminTermsRoutes = require('./routes/admin/terms');
-const userNoticeBoardRoutes = require('./routes/user/noticeBoard');
-const userStudentRoutes = require('./routes/user/student');
 const adminStudentRoutes = require('./routes/admin/studentManagement');
 const adminSettingRoutes = require('./routes/admin/setting');
 
-// Import chat routes
-const userChatRoutes = require('./routes/user/chat'); // <-- Add this line
 
 // Middlewares
 app.use(express.static(path.join(__dirname, 'public')));
@@ -58,6 +57,8 @@ app.get('/', (req, res) => res.send('Welcome to Pudhuyugam LMS Backend API'));
 //  User routes
 app.use('/api', userHomeRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/student/profile', studentProfileRoutes);
+app.use('/api/chat', userChatRoutes);
 app.use('/api/settings', userSettingsRoutes);                 
 app.use('/api/blogs', userBlogRoutes);          
 app.use('/api/contact-enquiry', userEnquiryRoutes);   
@@ -67,12 +68,8 @@ app.use('/api/student', userStudentRoutes);
 app.use('/api/current-affairs', currentAffairsRoutes);
 app.use('/api/slides', slidesRoutes);
 
-//  Student routes
-app.use('/api/student/profile', studentProfileRoutes);
-
-
-
 //  Admin routes
+app.use("/api/admin/login",adminRoutes);
 app.use('/api/admin/announcements', adminAnnouncementRoutes);
 app.use('/api/admin/banners',adminBannerRoutes);
 app.use('/api/admin/blogs', adminBlogRoutes);
@@ -89,8 +86,6 @@ app.use('/api/notice-board', userNoticeBoardRoutes);
 app.use('/api/admin/students', adminStudentRoutes);
 app.use('/api/admin/settings', adminSettingRoutes);
 
-// Chat routes (should be after other routes)
-app.use('/api/chat', userChatRoutes); // <-- Add this line
 
 //  Error routes
 app.use((req, res, next) => {

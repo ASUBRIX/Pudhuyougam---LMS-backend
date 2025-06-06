@@ -24,12 +24,12 @@ const updateProfile = async (req, res) => {
 
   try {
     const student = await Student.findByUserId(req.user.id);
-    console.log('student',student);
+    console.log('print student:',student);
     
     if (!student) return res.status(404).json({ error: 'Student not found.' });
 
     const raw = req.body;
-    console.log(raw);
+    console.log('print form data recieved from frontend:',raw);
     
 
     const updateData = {
@@ -51,6 +51,8 @@ const updateProfile = async (req, res) => {
     };
 
     const updated = await Student.update(student.id, updateData);
+    console.log('updated data:',updated);
+    
     res.status(200).json(updated);
   } catch (err) {
     console.error('Error in updateProfile:', err);
