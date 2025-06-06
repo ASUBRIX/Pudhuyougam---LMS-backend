@@ -119,9 +119,11 @@ CREATE TABLE students (
   year VARCHAR(50),
   status VARCHAR(20) DEFAULT 'active',
   courses TEXT[],
+  profile_picture TEXT,  
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
 
 CREATE TABLE user_otps (
     phone_number VARCHAR(20) PRIMARY KEY,
