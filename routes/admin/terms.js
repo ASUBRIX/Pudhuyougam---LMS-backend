@@ -10,21 +10,9 @@ router.get('/privacy', termsController.getPrivacyPolicy);
 
 // Admin: Get all versions, update
 router.get('/terms/versions', auth, requireAdmin, termsController.getAllTerms);
-router.put(
-    '/terms',
-    auth,
-    requireAdmin,
-    body('content').notEmpty().withMessage('Content is required'),
-    termsController.updateTerms
-);
+router.put('/terms',auth,requireAdmin,body('content').notEmpty().withMessage('Content is required'),termsController.updateTerms);
 
 router.get('/privacy/versions', auth, requireAdmin, termsController.getAllPrivacyPolicies);
-router.put(
-    '/privacy',
-    auth,
-    requireAdmin,
-    body('content').notEmpty().withMessage('Content is required'),
-    termsController.updatePrivacyPolicy
-);
+router.put('/privacy',auth,requireAdmin,body('content').notEmpty().withMessage('Content is required'),termsController.updatePrivacyPolicy);
 
 module.exports = router;
