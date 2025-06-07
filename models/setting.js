@@ -5,6 +5,8 @@ class Setting {
     static async getWebsiteSettings() {
         try {
             const result = await query('SELECT * FROM website_settings WHERE id = 1');
+            console.log(result);
+            
             return result.rows[0] || {};
         } catch (error) {
             console.error('Error fetching website settings:', error);
@@ -12,6 +14,7 @@ class Setting {
         }
     }
 
+    
     // Update website settings
     static async updateWebsiteSettings(data) {
         try {
