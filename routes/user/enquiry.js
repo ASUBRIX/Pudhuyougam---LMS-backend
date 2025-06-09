@@ -1,8 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const enquiryController = require('../../controllers/user/enquiryController');
+const { createEnquiry, getEnquiryPrefillDetails } = require('../../controllers/user/enquiryController');
+const { auth } = require('../../middleware/auth');
 
+// Submit enquiry
+router.post('/', createEnquiry);
 
-router.post('/', enquiryController.createEnquiry);
+// Fetch enquiry form prefill data
+router.get('/prefill', auth, getEnquiryPrefillDetails);
 
 module.exports = router;

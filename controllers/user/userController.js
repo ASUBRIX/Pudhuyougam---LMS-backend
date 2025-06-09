@@ -119,11 +119,9 @@ const getAllUsers = async (req, res) => {
 
 // Get current user profile
 const getProfile = async (req, res) => {
-  console.log("Get profile function executed");
   
   try {
     const userId = req.user?.id || req.userId;
-    console.log('user id:',userId);
     
     const result = await query(
       `SELECT 
@@ -228,45 +226,35 @@ const updateProfile = async (req, res) => {
   }
 };
 
-// Change email
-const changeEmail = async (req, res) => {
+// Get basic user info for contact form autofill
+const getContactPrefillDetails = async (req, res) => {
   try {
     const userId = req.user?.id || req.userId;
-    const { email } = req.body;
-    const check = await query('SELECT id FROM users WHERE email = $1', [email]);
-    if (check.rows.length) return res.status(409).json({ error: 'Email already in use' });
 
     const result = await query(
-      'UPDATE users SET email = $1, updated_at = NOW() WHERE id = $2 RETURNING id, first_name, last_name, email, phone_number, role',
-      [email, userId]
+      `SELECT 
+        u.first_name AS name,
+        u.email,
+        u.phone_number AS phone
+      FROM users u
+      WHERE u.id = $1`,
+      [userId]
     );
-    if (!result.rows.length) return res.status(404).json({ error: 'User not found' });
+
+    if (!result.rows.length) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
     res.status(200).json(result.rows[0]);
   } catch (err) {
+    console.error("Contact prefill error:", err);
     res.status(500).json({ error: 'Server error' });
   }
 };
 
-// Change password
-const changePassword = async (req, res) => {
-  try {
-    const userId = req.user?.id || req.userId;
-    const { currentPassword, newPassword } = req.body;
 
-    const userRes = await query('SELECT password_hash FROM users WHERE id = $1', [userId]);
-    if (!userRes.rows.length) return res.status(404).json({ error: 'User not found' });
 
-    const match = await bcrypt.compare(currentPassword, userRes.rows[0].password_hash);
-    if (!match) return res.status(400).json({ error: 'Incorrect current password' });
 
-    const newHash = await bcrypt.hash(newPassword, 10);
-    await query('UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2', [newHash, userId]);
-
-    res.status(200).json({ message: 'Password updated successfully' });
-  } catch (err) {
-    res.status(500).json({ error: 'Server error' });
-  }
-};
 
 module.exports = {
   register,
@@ -274,7 +262,6 @@ module.exports = {
   getAllUsers,
   getProfile,
   updateProfile,
-  changeEmail,
-  changePassword,
   checkUser,
+  getContactPrefillDetails
 };
