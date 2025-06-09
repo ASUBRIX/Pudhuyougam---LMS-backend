@@ -20,6 +20,7 @@ const userBlogRoutes = require('./routes/user/blog');
 const currentAffairsRoutes = require('./routes/user/currentAffairs');
 const userInstructorRoutes = require('./routes/user/instructor');
 const userSettingsRoutes = require('./routes/user/settings');
+const userLegalRoutes = require("./routes/user/legal");
 
 
 // Import admin routes
@@ -68,6 +69,7 @@ app.use('/api/banners', userBannerRoutes);
 app.use('/api/student', userStudentRoutes);
 app.use('/api/current-affairs', currentAffairsRoutes);
 app.use('/api/slides', slidesRoutes);
+app.use('/api/legal',userLegalRoutes);
 
 //  Admin routes
 app.use("/api/admin/login",adminRoutes);
