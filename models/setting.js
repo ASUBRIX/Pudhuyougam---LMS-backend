@@ -5,7 +5,6 @@ class Setting {
     static async getWebsiteSettings() {
         try {
             const result = await query('SELECT * FROM website_settings WHERE id = 1');
-            console.log(result);
             
             return result.rows[0] || {};
         } catch (error) {

@@ -14,8 +14,6 @@ const getWebsiteSettings = async (req, res) => {
 const updateWebsiteSettings = async (req, res) => {
     try {
         const settings = { ...req.body };
-
-        // Handle file uploads if present
         if (req.files) {
             if (req.files.site_logo && req.files.site_logo.length > 0) {
                 settings.site_logo = '/uploads/' + req.files.site_logo[0].filename;
