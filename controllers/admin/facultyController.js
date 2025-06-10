@@ -10,7 +10,6 @@ const getAllFaculties = async (req, res) => {
   }
 };
 
-// Create new faculty
 const createFaculty = async (req, res) => {
   const {
     name, email, phone, department, designation,
@@ -19,7 +18,6 @@ const createFaculty = async (req, res) => {
   } = req.body;
 
   try {
-    // Step 1: Insert without faculty_id
     const result = await query(
       `INSERT INTO faculties 
         (name, email, phone, department, designation, status, qualification, experience, avatar, joining_date, bio, board_member) 
@@ -34,24 +32,28 @@ const createFaculty = async (req, res) => {
     );
 
     const insertedId = result.rows[0].id;
-    const padded = String(insertedId).padStart(3, '0');
-    const generatedFacultyId = `FAC${padded}`;
+    const generatedFacultyId = `FAC${String(insertedId).padStart(3, '0')}`;
 
-    // Step 2: Update with generated faculty_id
+    // Step 2: Update faculty_id
     const updated = await query(
       `UPDATE faculties SET faculty_id = $1 WHERE id = $2 RETURNING *`,
       [generatedFacultyId, insertedId]
     );
 
-    console.log(updated);
-    
+    console.log('[✅ Created Faculty]', updated.rows[0]); 
 
     res.status(201).json(updated.rows[0]);
   } catch (err) {
-    console.error('Create Faculty Error:', err);
+    console.error('[❌ Error in createFaculty]', {
+      message: err.message,
+      detail: err.detail,
+      code: err.code,
+      stack: err.stack
+    });
     res.status(500).json({ error: 'Failed to add faculty' });
   }
 };
+
 
 // Update faculty by ID
 const updateFaculty = async (req, res) => {
