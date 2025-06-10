@@ -6,3 +6,5 @@ const instructorController = require('../../controllers/user/instructorControlle
 router.get('/', instructorController.getPublicInstructors);
 
 module.exports = router;
+
+

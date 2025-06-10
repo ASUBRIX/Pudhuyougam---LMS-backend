@@ -1,15 +1,21 @@
 const { query } = require('../../config/database');
 
-// Get public instructor list (active)
+// Get public instructor list (active) with board_member field
 const getPublicInstructors = async (req, res) => {
   try {
     const result = await query(
-      `SELECT id, faculty_id, name, department, designation, avatar, experience 
-       FROM faculties WHERE status = 'active' ORDER BY id DESC`
+      `SELECT id, faculty_id, name, department, designation, avatar, experience, board_member
+       FROM faculties
+       WHERE status = 'active'
+       ORDER BY id DESC`
     );
-    res.json(result.rows);
+    return res.json(result.rows);
+
   } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch instructors' });
+    console.error('Error fetching instructors:', err);
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Failed to fetch instructors' });
+    }
   }
 };
 

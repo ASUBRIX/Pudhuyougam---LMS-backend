@@ -11,3 +11,4 @@ router.put('/:id', facultyController.updateFaculty);
 router.delete('/:id', facultyController.deleteFaculty);
 
 module.exports = router;
+

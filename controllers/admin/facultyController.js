@@ -2,8 +2,11 @@ const { query } = require('../../config/database');
 
 // Get all faculties
 const getAllFaculties = async (req, res) => {
+  console.log('getall faculties function called');
+  
   try {
     const result = await query('SELECT * FROM faculties ORDER BY id DESC');
+    
     res.json(result.rows);
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch faculties' });
@@ -12,18 +15,25 @@ const getAllFaculties = async (req, res) => {
 
 // Create a new faculty
 const createFaculty = async (req, res) => {
+  
   const {
     name, email, phone, department, designation,
-    status, qualification, experience, avatar, joiningDate, facultyId, bio
+    status, qualification, experience, avatar,
+    joiningDate, facultyId, bio, board_member
   } = req.body;
 
   try {
     const result = await query(
       `INSERT INTO faculties 
-        (name, email, phone, department, designation, status, qualification, experience, avatar, joining_date, faculty_id, bio) 
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+        (name, email, phone, department, designation, status, qualification, experience, avatar, joining_date, faculty_id, bio, board_member) 
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
        RETURNING *`,
-      [name, email, phone, department, designation, status, qualification, experience, avatar, joiningDate, facultyId, bio]
+      [
+        name, email, phone, department, designation,
+        status, qualification, experience, avatar,
+        joiningDate, facultyId, bio,
+        board_member === true || board_member === 'true' 
+      ]
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
@@ -36,7 +46,8 @@ const updateFaculty = async (req, res) => {
   const { id } = req.params;
   const {
     name, email, phone, department, designation,
-    status, qualification, experience, avatar, joiningDate, bio
+    status, qualification, experience, avatar,
+    joiningDate, bio, board_member
   } = req.body;
 
   try {
@@ -52,10 +63,17 @@ const updateFaculty = async (req, res) => {
         experience = $8,
         avatar = $9,
         joining_date = $10,
-        bio = $11
-       WHERE id = $12
+        bio = $11,
+        board_member = $12
+       WHERE id = $13
        RETURNING *`,
-      [name, email, phone, department, designation, status, qualification, experience, avatar, joiningDate, bio, id]
+      [
+        name, email, phone, department, designation,
+        status, qualification, experience, avatar,
+        joiningDate, bio,
+        board_member === true || board_member === 'true',
+        id
+      ]
     );
     res.json(result.rows[0]);
   } catch (err) {
