@@ -2,41 +2,53 @@ const { query } = require('../../config/database');
 
 // Get all faculties
 const getAllFaculties = async (req, res) => {
-  console.log('getall faculties function called');
-  
   try {
     const result = await query('SELECT * FROM faculties ORDER BY id DESC');
-    
     res.json(result.rows);
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch faculties' });
   }
 };
 
-// Create a new faculty
+// Create new faculty
 const createFaculty = async (req, res) => {
-  
   const {
     name, email, phone, department, designation,
     status, qualification, experience, avatar,
-    joiningDate, facultyId, bio, board_member
+    joiningDate, bio, board_member
   } = req.body;
 
   try {
+    // Step 1: Insert without faculty_id
     const result = await query(
       `INSERT INTO faculties 
-        (name, email, phone, department, designation, status, qualification, experience, avatar, joining_date, faculty_id, bio, board_member) 
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
-       RETURNING *`,
+        (name, email, phone, department, designation, status, qualification, experience, avatar, joining_date, bio, board_member) 
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+       RETURNING id`,
       [
         name, email, phone, department, designation,
         status, qualification, experience, avatar,
-        joiningDate, facultyId, bio,
-        board_member === true || board_member === 'true' 
+        joiningDate, bio,
+        board_member === true || board_member === 'true'
       ]
     );
-    res.status(201).json(result.rows[0]);
+
+    const insertedId = result.rows[0].id;
+    const padded = String(insertedId).padStart(3, '0');
+    const generatedFacultyId = `FAC${padded}`;
+
+    // Step 2: Update with generated faculty_id
+    const updated = await query(
+      `UPDATE faculties SET faculty_id = $1 WHERE id = $2 RETURNING *`,
+      [generatedFacultyId, insertedId]
+    );
+
+    console.log(updated);
+    
+
+    res.status(201).json(updated.rows[0]);
   } catch (err) {
+    console.error('Create Faculty Error:', err);
     res.status(500).json({ error: 'Failed to add faculty' });
   }
 };
@@ -64,7 +76,8 @@ const updateFaculty = async (req, res) => {
         avatar = $9,
         joining_date = $10,
         bio = $11,
-        board_member = $12
+        board_member = $12,
+        updated_at = CURRENT_TIMESTAMP
        WHERE id = $13
        RETURNING *`,
       [
@@ -77,11 +90,12 @@ const updateFaculty = async (req, res) => {
     );
     res.json(result.rows[0]);
   } catch (err) {
+    console.error('Update Faculty Error:', err);
     res.status(500).json({ error: 'Failed to update faculty' });
   }
 };
 
-// Delete faculty by ID
+// Delete faculty
 const deleteFaculty = async (req, res) => {
   const { id } = req.params;
   try {

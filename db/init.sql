@@ -355,22 +355,23 @@ CREATE TABLE gallery_items (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE faculties (
+CREATE TABLE IF NOT EXISTS faculties (
   id SERIAL PRIMARY KEY,
-  faculty_id VARCHAR(20) UNIQUE NOT NULL,
-  name VARCHAR(100) NOT NULL,
-  email VARCHAR(100) UNIQUE NOT NULL,
+  faculty_id VARCHAR(20) UNIQUE,
+  name VARCHAR(255) NOT NULL,
+  email VARCHAR(255),
   phone VARCHAR(20),
   department VARCHAR(100),
   designation VARCHAR(100),
-  status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'blocked')),
-  qualification TEXT,
-  experience TEXT,
+  status VARCHAR(20),
+  qualification VARCHAR(255),
+  experience VARCHAR(100),
   avatar TEXT,
-  bio TEXT, 
-  joining_date DATE DEFAULT CURRENT_DATE,
+  bio TEXT,
+  joining_date DATE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  board_member BOOLEAN DEFAULT FALSE
 );
 
 
