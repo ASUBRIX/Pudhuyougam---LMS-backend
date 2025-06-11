@@ -1,4 +1,3 @@
-// models/User.js
 const { query } = require("../config/database");
 const jwt = require("jsonwebtoken");
 

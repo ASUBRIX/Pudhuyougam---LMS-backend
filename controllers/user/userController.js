@@ -5,6 +5,7 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const { query } = require("../../config/database");
 const admin = require("../../config/firebaseAdmin");
+const generateEnrollmentId = require("../../utils/generateEnrollmentId");
 
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || "refresh_secret_fallback";
 
@@ -56,7 +57,9 @@ const register = async (req, res) => {
     });
 
     if (user.role === "student") {
-      const student = await Student.create({
+      const enrollmentId = await generateEnrollmentId(); // 🔁 consistent STUxxx logic
+
+      await Student.create({
         userId: user.id,
         firstName: first_name,
         lastName: last_name,
@@ -68,13 +71,8 @@ const register = async (req, res) => {
         semester: "",
         year: "",
         courses: null,
+        enrollmentId
       });
-
-      // Add STUxxx enrollment ID
-      await query("UPDATE students SET enrollment_id = $1 WHERE id = $2", [
-        `STU${String(student.id).padStart(3, "0")}`,
-        student.id,
-      ]);
     }
 
     const accessToken = User.generateAccessToken(user);

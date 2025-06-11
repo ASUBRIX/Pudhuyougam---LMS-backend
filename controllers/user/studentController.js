@@ -1,15 +1,9 @@
 const Student = require('../../models/student');
 
-
-
 const getProfile = async (req, res) => {
-
   try {
     const student = await Student.findByUserId(req.user.id);
-
-    if (!student) {
-      return res.status(404).json({ error: 'Student not found.' });
-    }
+    if (!student) return res.status(404).json({ error: 'Student not found.' });
 
     res.status(200).json(student);
   } catch (err) {
@@ -18,19 +12,15 @@ const getProfile = async (req, res) => {
   }
 };
 
-
 const updateProfile = async (req, res) => {
   console.log("Update profile function is working");
 
   try {
     const student = await Student.findByUserId(req.user.id);
-    console.log('print student:',student);
-    
     if (!student) return res.status(404).json({ error: 'Student not found.' });
 
     const raw = req.body;
-    console.log('print form data recieved from frontend:',raw);
-    
+    console.log('print form data received from frontend:', raw);
 
     const updateData = {
       userId: req.user.id,
@@ -51,15 +41,14 @@ const updateProfile = async (req, res) => {
     };
 
     const updated = await Student.update(student.id, updateData);
-    console.log('updated data:',updated);
-    
+    console.log('updated data:', updated);
+
     res.status(200).json(updated);
   } catch (err) {
     console.error('Error in updateProfile:', err);
     res.status(500).json({ error: 'Failed to update student profile.' });
   }
 };
-
 
 module.exports = {
   getProfile,
