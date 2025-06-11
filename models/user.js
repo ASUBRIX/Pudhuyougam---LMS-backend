@@ -1,3 +1,4 @@
+// models/User.js
 const { query } = require("../config/database");
 const jwt = require("jsonwebtoken");
 
@@ -20,26 +21,17 @@ class User {
     return result.rows[0];
   }
 
-  
   static async findByEmail(email) {
     const result = await query("SELECT * FROM users WHERE email = $1", [email]);
     return result.rows[0];
   }
 
   static async findByPhone(phone_number) {
-    const result = await query("SELECT * FROM users WHERE phone_number = $1", [
-      phone_number,
-    ]);
+    const result = await query("SELECT * FROM users WHERE phone_number = $1", [phone_number]);
     return result.rows[0];
   }
 
-  static async create({
-    first_name,
-    last_name,
-    email,
-    phone_number,
-    role,
-  }) {
+  static async create({ first_name, last_name, email, phone_number, role }) {
     const result = await query(
       "INSERT INTO users (first_name, last_name, email, phone_number, role) VALUES ($1, $2, $3, $4, $5) RETURNING *",
       [first_name, last_name, email, phone_number, role]
@@ -60,11 +52,6 @@ class User {
     return true;
   }
 
-  static async logout(userId) {
-    // JWT logout handled on client side
-    return true;
-  }
-
   static generateAccessToken(user) {
     return jwt.sign(
       { id: user.id, role: user.role, phone_number: user.phone_number },
@@ -81,17 +68,14 @@ class User {
     );
   }
 
-static async verifyEmailPassword(email, plainPassword) {
-  const result = await query("SELECT * FROM users WHERE email = $1", [email]);
-  const user = result.rows[0];
-  if (!user) return null;
-  if (user.password_hash !== plainPassword) return null;
+  static async verifyEmailPassword(email, plainPassword) {
+    const result = await query("SELECT * FROM users WHERE email = $1", [email]);
+    const user = result.rows[0];
+    if (!user) return null;
+    if (user.password_hash !== plainPassword) return null;
 
-  return { user };
-}
-
-
-
+    return { user };
+  }
 }
 
 module.exports = User;

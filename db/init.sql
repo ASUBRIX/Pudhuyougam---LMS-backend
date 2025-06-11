@@ -119,10 +119,13 @@ CREATE TABLE students (
   year VARCHAR(50),
   status VARCHAR(20) DEFAULT 'active',
   courses TEXT[],
-  profile_picture TEXT,  
+  profile_picture TEXT,
+  enrollment_id VARCHAR(20) UNIQUE, -- e.g., STU001, STU002
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+
 
 
 CREATE TABLE user_otps (

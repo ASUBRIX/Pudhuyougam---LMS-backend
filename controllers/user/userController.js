@@ -2,15 +2,13 @@ const User = require("../../models/user");
 const Student = require("../../models/student");
 const { sendOTP } = require("../../config/sms");
 const jwt = require("jsonwebtoken");
-const bcrypt = require('bcryptjs');
-const { query } = require('../../config/database');
+const bcrypt = require("bcryptjs");
+const { query } = require("../../config/database");
 const admin = require("../../config/firebaseAdmin");
-
 
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || "refresh_secret_fallback";
 
-
-// Check if user exists using Firebase idToken and phone number
+// ✅ Check if user exists using Firebase idToken and phone number
 const checkUser = async (req, res) => {
   const { phone_number, idToken } = req.body;
   try {
@@ -20,20 +18,19 @@ const checkUser = async (req, res) => {
       return res.status(400).json({ error: "Phone number mismatch or not verified." });
     }
     const user = await User.findByPhone(firebasePhone);
-    if (user && user.first_name) { 
+    if (user && user.first_name) {
       const accessToken = User.generateAccessToken(user);
       return res.json({ user, accessToken });
     } else {
       return res.json({});
     }
   } catch (err) {
-    console.error('checkUser error:', err);
-    res.status(401).json({ error: 'Invalid token or user check failed.' });
+    console.error("checkUser error:", err);
+    res.status(401).json({ error: "Invalid token or user check failed." });
   }
 };
 
-
-// Register user (after OTP for new users)
+// ✅ Register user (after OTP for new users)
 const register = async (req, res) => {
   try {
     const { first_name, last_name, email, password_hash, phone_number, role } = req.body;
@@ -42,13 +39,12 @@ const register = async (req, res) => {
         error: "First name, last name, email, and password are required.",
       });
     }
+
     const existingEmail = await User.findByEmail(email);
-    if (existingEmail)
-      return res.status(400).json({ error: "Email already exists." });
+    if (existingEmail) return res.status(400).json({ error: "Email already exists." });
 
     const existingPhone = await User.findByPhone(phone_number);
-    if (existingPhone && existingPhone.first_name)
-      return res.status(400).json({ error: "Phone number already exists." });
+    if (existingPhone && existingPhone.first_name) return res.status(400).json({ error: "Phone number already exists." });
 
     const user = await User.create({
       first_name,
@@ -60,7 +56,7 @@ const register = async (req, res) => {
     });
 
     if (user.role === "student") {
-      await Student.create({
+      const student = await Student.create({
         userId: user.id,
         firstName: first_name,
         lastName: last_name,
@@ -73,11 +69,17 @@ const register = async (req, res) => {
         year: "",
         courses: null,
       });
+
+      // Add STUxxx enrollment ID
+      await query("UPDATE students SET enrollment_id = $1 WHERE id = $2", [
+        `STU${String(student.id).padStart(3, "0")}`,
+        student.id,
+      ]);
     }
 
     const accessToken = User.generateAccessToken(user);
     const refreshToken = User.generateRefreshToken(user);
-    
+
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: true,
@@ -92,9 +94,7 @@ const register = async (req, res) => {
   }
 };
 
-
-
-// Refresh token endpoint
+// ✅ Refresh token endpoint
 const refreshAccessToken = (req, res) => {
   const refreshToken = req.cookies.refreshToken;
   if (!refreshToken) return res.status(401).json({ error: "No refresh token provided" });
@@ -107,7 +107,7 @@ const refreshAccessToken = (req, res) => {
   }
 };
 
-// Get all users (for admin)
+// ✅ Get all users (for admin)
 const getAllUsers = async (req, res) => {
   try {
     const users = await User.findAll();
@@ -117,12 +117,11 @@ const getAllUsers = async (req, res) => {
   }
 };
 
-// Get current user profile
+// ✅ Get current user profile
 const getProfile = async (req, res) => {
-  
   try {
     const userId = req.user?.id || req.userId;
-    
+
     const result = await query(
       `SELECT 
         u.id AS user_id,
@@ -150,57 +149,49 @@ const getProfile = async (req, res) => {
       [userId]
     );
 
-    console.log("result",result);
-    
-    if (!result.rows.length) return res.status(404).json({ error: 'User not found' });
+    if (!result.rows.length) return res.status(404).json({ error: "User not found" });
     res.status(200).json(result.rows[0]);
   } catch (err) {
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({ error: "Server error" });
   }
 };
 
-
+// ✅ Update user + student profile
 const updateProfile = async (req, res) => {
   try {
     const userId = req.user?.id || req.userId;
 
-    // Get all possible fields from the request body
     const {
-      first_name, last_name, email, phone_number,       // user table
-      student_first_name, student_last_name, student_email, student_phone,
-      enrollment_date, program, semester, year, status, courses // student table
+      first_name,
+      last_name,
+      email,
+      phone_number,
+      student_first_name,
+      student_last_name,
+      student_email,
+      student_phone,
+      enrollment_date,
+      program,
+      semester,
+      year,
+      status,
+      courses,
     } = req.body;
 
-    // 1. Update users table
     const userUpdate = await query(
       `UPDATE users SET 
-        first_name = $1, 
-        last_name = $2, 
-        email = $3, 
-        phone_number = $4, 
-        updated_at = NOW()
-       WHERE id = $5 
-       RETURNING id, first_name, last_name, email, phone_number, role`,
+        first_name = $1, last_name = $2, email = $3, phone_number = $4, updated_at = NOW()
+       WHERE id = $5 RETURNING id, first_name, last_name, email, phone_number, role`,
       [first_name, last_name, email, phone_number, userId]
     );
-    if (!userUpdate.rows.length) return res.status(404).json({ error: 'User not found' });
 
-    // 2. Update students table (only if a student record exists)
+    if (!userUpdate.rows.length) return res.status(404).json({ error: "User not found" });
+
     const studentResult = await query(
       `UPDATE students SET 
-        first_name = $1,
-        last_name = $2,
-        email = $3,
-        phone = $4,
-        enrollment_date = $5,
-        program = $6,
-        semester = $7,
-        year = $8,
-        status = $9,
-        courses = $10,
-        updated_at = NOW()
-      WHERE user_id = $11
-      RETURNING *`,
+        first_name = $1, last_name = $2, email = $3, phone = $4, enrollment_date = $5,
+        program = $6, semester = $7, year = $8, status = $9, courses = $10, updated_at = NOW()
+       WHERE user_id = $11 RETURNING *`,
       [
         student_first_name,
         student_last_name,
@@ -212,49 +203,36 @@ const updateProfile = async (req, res) => {
         year,
         status,
         courses,
-        userId
+        userId,
       ]
     );
 
-    // Respond with the updated user and student data
     res.status(200).json({
       user: userUpdate.rows[0],
-      student: studentResult.rows[0] || null
+      student: studentResult.rows[0] || null,
     });
   } catch (err) {
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({ error: "Server error" });
   }
 };
 
-// Get basic user info for contact form autofill
+// ✅ Prefill Contact Form
 const getContactPrefillDetails = async (req, res) => {
   try {
     const userId = req.user?.id || req.userId;
 
     const result = await query(
-      `SELECT 
-        u.first_name AS name,
-        u.email,
-        u.phone_number AS phone
-      FROM users u
-      WHERE u.id = $1`,
+      `SELECT first_name AS name, email, phone_number AS phone FROM users WHERE id = $1`,
       [userId]
     );
 
-    if (!result.rows.length) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
+    if (!result.rows.length) return res.status(404).json({ error: "User not found" });
     res.status(200).json(result.rows[0]);
   } catch (err) {
     console.error("Contact prefill error:", err);
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({ error: "Server error" });
   }
 };
-
-
-
-
 
 module.exports = {
   register,
@@ -263,5 +241,5 @@ module.exports = {
   getProfile,
   updateProfile,
   checkUser,
-  getContactPrefillDetails
+  getContactPrefillDetails,
 };
