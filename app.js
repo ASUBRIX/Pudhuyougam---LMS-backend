@@ -2,7 +2,7 @@ const express = require('express');
 const app = express();
 const path = require('path');
 const cors = require('cors');
-const logger = require('morgan');
+const morgan = require('morgan');
 const cookieParser = require('cookie-parser');
 require('./config/database');
 
@@ -12,19 +12,18 @@ const userEnquiryRoutes = require('./routes/user/enquiry');
 const userRoutes = require('./routes/user/user');
 const userStudentRoutes = require('./routes/user/student');
 const userChatRoutes = require('./routes/user/chat');
-const studentProfileRoutes = require("./routes/user/student");
+const studentProfileRoutes = require('./routes/user/student');
 const userBannerRoutes = require('./routes/user/banner');
 const userNoticeBoardRoutes = require('./routes/user/noticeBoard');
-const slidesRoutes = require("./routes/user/banner");
+const slidesRoutes = require('./routes/user/banner');
 const userBlogRoutes = require('./routes/user/blog');
 const currentAffairsRoutes = require('./routes/user/currentAffairs');
 const userInstructorRoutes = require('./routes/user/instructor');
 const userSettingsRoutes = require('./routes/user/settings');
-const userLegalRoutes = require("./routes/user/legal");
-
+const userLegalRoutes = require('./routes/user/legal');
 
 // Import admin routes
-const adminRoutes = require("./routes/admin/admin");
+const adminRoutes = require('./routes/admin/admin');
 const adminAnnouncementRoutes = require('./routes/admin/announcement');
 const adminBannerRoutes = require('./routes/admin/banner');
 const adminBlogRoutes = require('./routes/admin/blog');
@@ -41,40 +40,46 @@ const adminTermsRoutes = require('./routes/admin/terms');
 const adminStudentRoutes = require('./routes/admin/studentManagement');
 const adminSettingRoutes = require('./routes/admin/setting');
 
-
-// Middlewares
+// Static files
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads/gallery', express.static(path.join(__dirname, 'public/uploads/gallery')));
+
+// Middleware
 app.use(cors({ origin: '*', methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], allowedHeaders: ['Content-Type', 'Authorization', 'auth_key'] }));
 app.options('*', cors());
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
-app.use(logger('dev'));
-app.use(express.json({limit:'10mb'}));
-app.use(express.urlencoded({limit:'10mb', extended: false }));
+app.use(morgan('dev', {
+  skip: function (req, res) {
+    return req.path === '/health';
+  }
+}));
+
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: false }));
 app.use(cookieParser());
 app.get('/health', (req, res) => res.sendStatus(200));
 app.get('/', (req, res) => res.send('Welcome to Pudhuyugam LMS Backend API'));
 
-//  User routes
+// User routes
 app.use('/api', userHomeRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/student/profile', studentProfileRoutes);
 app.use('/api/chat', userChatRoutes);
-app.use('/api/settings', userSettingsRoutes);                 
-app.use('/api/blogs', userBlogRoutes);          
-app.use('/api/contact-enquiry', userEnquiryRoutes);   
+app.use('/api/settings', userSettingsRoutes);
+app.use('/api/blogs', userBlogRoutes);
+app.use('/api/contact-enquiry', userEnquiryRoutes);
 app.use('/api/instructors', userInstructorRoutes);
-app.use('/api/banners', userBannerRoutes); 
+app.use('/api/banners', userBannerRoutes);
 app.use('/api/student', userStudentRoutes);
 app.use('/api/current-affairs', currentAffairsRoutes);
 app.use('/api/slides', slidesRoutes);
-app.use('/api/legal',userLegalRoutes);
+app.use('/api/legal', userLegalRoutes);
 
-//  Admin routes
-app.use("/api/admin/login",adminRoutes);
+// Admin routes
+app.use('/api/admin/login', adminRoutes);
 app.use('/api/admin/announcements', adminAnnouncementRoutes);
-app.use('/api/admin/banners',adminBannerRoutes);
+app.use('/api/admin/banners', adminBannerRoutes);
 app.use('/api/admin/blogs', adminBlogRoutes);
 app.use('/api/admin/coupons', adminCouponRoutes);
 app.use('/api/admin/courses', adminCourseRoutes);
@@ -86,14 +91,14 @@ app.use('/api/admin/faculties', adminFacultyRoutes);
 app.use('/api/admin/gallery', adminGalleryRoutes);
 app.use('/api/admin/privacy', adminPrivacyRoutes);
 app.use('/api/admin/terms', adminTermsRoutes);
-app.use('/api/notice-board', userNoticeBoardRoutes); 
+app.use('/api/notice-board', userNoticeBoardRoutes);
 app.use('/api/admin/students', adminStudentRoutes);
 app.use('/api/admin/settings', adminSettingRoutes);
 
 
-//  Error routes
 app.use((req, res, next) => {
   res.status(404).json({ error: 'Endpoint not found' });
 });
 
 module.exports = app;
+
