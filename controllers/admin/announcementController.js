@@ -4,6 +4,10 @@ const { query } = require('../../config/database');
 const getAllAnnouncements = async (req, res) => {
   try {
     const result = await query('SELECT * FROM announcements ORDER BY created_at DESC');
+    console.log('result:',result);
+    console.log('result rows:',result.rows);
+    
+    
     res.json(result.rows);
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch announcements' });
