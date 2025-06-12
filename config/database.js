@@ -39,7 +39,7 @@ pool.connect()
     return client
       .query('SELECT NOW()')
       .then(res => {
-        console.log(`PostgreSQL connected`);
+        console.log(`DB Connected`);
         client.release();
       })
       .catch(err => {
@@ -48,7 +48,7 @@ pool.connect()
       });
   })
   .catch(err => {
-    console.error('PostgreSQL connection error');
+    console.error('DB connection error');
   });
 
 module.exports = {
