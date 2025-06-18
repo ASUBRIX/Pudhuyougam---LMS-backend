@@ -1,5 +1,3 @@
-// scripts/run_migration.js
-
 const fs = require('fs');
 const path = require('path');
 const { query } = require('../config/database');

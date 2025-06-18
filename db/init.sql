@@ -36,6 +36,16 @@ DROP TABLE IF EXISTS announcements CASCADE;
 DROP TABLE IF EXISTS current_affairs CASCADE;
 DROP TABLE IF EXISTS enquiries CASCADE;
 DROP TABLE IF EXISTS coupons CASCADE;
+DROP TABLE IF EXISTS chat_messages CASCADE;
+
+-- Function to automatically update updated_at timestamp
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$ language 'plpgsql';
 
 -- Banners
 CREATE TABLE banners (
@@ -46,8 +56,8 @@ CREATE TABLE banners (
   link VARCHAR(255),
   status VARCHAR(50) DEFAULT 'Active',
   sort_order INTEGER,
-  created_at TIMESTAMP,
-  updated_at TIMESTAMP
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Privacy Policy
@@ -55,8 +65,8 @@ CREATE TABLE privacy_policy (
   id SERIAL PRIMARY KEY,
   content TEXT,
   is_active BOOLEAN,
-  created_at TIMESTAMP,
-  updated_at TIMESTAMP
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Terms and Conditions
@@ -64,8 +74,8 @@ CREATE TABLE terms_conditions (
   id SERIAL PRIMARY KEY,
   content TEXT,
   is_active BOOLEAN,
-  created_at TIMESTAMP,
-  updated_at TIMESTAMP
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Website Settings
@@ -84,8 +94,8 @@ CREATE TABLE website_settings (
   youtube_url VARCHAR(255),
   telegram_url VARCHAR(255),
   instagram_url VARCHAR(255),
-  created_at TIMESTAMP,
-  updated_at TIMESTAMP
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Users
@@ -104,7 +114,6 @@ CREATE TABLE users (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-
 
 CREATE TABLE students (
   id SERIAL PRIMARY KEY,
@@ -125,9 +134,6 @@ CREATE TABLE students (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-
-
-
 CREATE TABLE user_otps (
     phone_number VARCHAR(20) PRIMARY KEY,
     otp VARCHAR(6),
@@ -145,8 +151,6 @@ VALUES (
   NOW()
 )
 ON CONFLICT (email) DO NOTHING;
-
-
 
 -- Courses
 CREATE TABLE courses (
@@ -336,19 +340,6 @@ CREATE TABLE test_attempts (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Indexes
-CREATE INDEX idx_users_email ON users(email);
-CREATE INDEX idx_students_email ON students(email);
-CREATE INDEX idx_courses_instructor ON courses(instructor_id);
-CREATE INDEX idx_enrollments_student ON enrollments(student_id);
-CREATE INDEX idx_enrollments_course ON enrollments(course_id);
-CREATE INDEX idx_test_folders_parent ON test_folders(parent_id);
-CREATE INDEX idx_tests_folder ON tests(folder_id);
-CREATE INDEX idx_test_questions_test ON test_questions(test_id);
-CREATE INDEX idx_test_options_question ON test_options(question_id);
-CREATE INDEX idx_test_attempts_test ON test_attempts(test_id);
-CREATE INDEX idx_test_attempts_user ON test_attempts(user_id);
-
 -- Gallery Items
 CREATE TABLE gallery_items (
   id SERIAL PRIMARY KEY,
@@ -358,7 +349,7 @@ CREATE TABLE gallery_items (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS faculties (
+CREATE TABLE faculties (
   id SERIAL PRIMARY KEY,
   faculty_id VARCHAR(20) UNIQUE,
   name VARCHAR(255) NOT NULL,
@@ -377,19 +368,19 @@ CREATE TABLE IF NOT EXISTS faculties (
   board_member BOOLEAN DEFAULT FALSE
 );
 
-
--- Blogs
+-- Enhanced Blogs table with better constraints and indexing
 CREATE TABLE blogs (
   id SERIAL PRIMARY KEY,
-  title TEXT NOT NULL,
+  title VARCHAR(255) NOT NULL CHECK (LENGTH(TRIM(title)) > 0),
   date TEXT NOT NULL,
-  author TEXT NOT NULL,
-  excerpt TEXT,
-  content TEXT,
+  author VARCHAR(100) NOT NULL CHECK (LENGTH(TRIM(author)) > 0),
+  excerpt TEXT CHECK (LENGTH(TRIM(excerpt)) > 0),
+  content TEXT NOT NULL CHECK (LENGTH(TRIM(content)) > 0),
   image_url TEXT,
-  tags TEXT[],
-  is_published BOOLEAN DEFAULT true,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  tags TEXT[] NOT NULL DEFAULT '{}' CHECK (array_length(tags, 1) > 0),
+  is_published BOOLEAN DEFAULT true NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
 -- Announcements
@@ -440,7 +431,6 @@ CREATE TABLE coupons (
   updated_at TIMESTAMP DEFAULT NOW()
 );
 
-
 -- Chat Messages Table
 CREATE TABLE chat_messages (
   id SERIAL PRIMARY KEY,
@@ -453,6 +443,129 @@ CREATE TABLE chat_messages (
   timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Indexes for performance
+-- Create indexes for better performance
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_students_email ON students(email);
+CREATE INDEX idx_courses_instructor ON courses(instructor_id);
+CREATE INDEX idx_enrollments_student ON enrollments(student_id);
+CREATE INDEX idx_enrollments_course ON enrollments(course_id);
+CREATE INDEX idx_test_folders_parent ON test_folders(parent_id);
+CREATE INDEX idx_tests_folder ON tests(folder_id);
+CREATE INDEX idx_test_questions_test ON test_questions(test_id);
+CREATE INDEX idx_test_options_question ON test_options(question_id);
+CREATE INDEX idx_test_attempts_test ON test_attempts(test_id);
+CREATE INDEX idx_test_attempts_user ON test_attempts(user_id);
 CREATE INDEX idx_chat_messages_user_id ON chat_messages(user_id);
 CREATE INDEX idx_chat_messages_sender ON chat_messages(sender);
+
+-- Blog specific indexes for better performance
+CREATE INDEX idx_blogs_is_published ON blogs(is_published);
+CREATE INDEX idx_blogs_created_at ON blogs(created_at DESC);
+CREATE INDEX idx_blogs_author ON blogs(author);
+CREATE INDEX idx_blogs_tags ON blogs USING GIN(tags);
+CREATE INDEX idx_blogs_title_search ON blogs USING GIN(to_tsvector('english', title));
+CREATE INDEX idx_blogs_content_search ON blogs USING GIN(to_tsvector('english', content));
+CREATE INDEX idx_blogs_published_created ON blogs(is_published, created_at DESC);
+
+-- Triggers to automatically update updated_at on row updates
+CREATE TRIGGER update_blogs_updated_at
+    BEFORE UPDATE ON blogs
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_users_updated_at
+    BEFORE UPDATE ON users
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_students_updated_at
+    BEFORE UPDATE ON students
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_courses_updated_at
+    BEFORE UPDATE ON courses
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_course_pricing_plans_updated_at
+    BEFORE UPDATE ON course_pricing_plans
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_course_content_modules_updated_at
+    BEFORE UPDATE ON course_content_modules
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_test_folders_updated_at
+    BEFORE UPDATE ON test_folders
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_tests_updated_at
+    BEFORE UPDATE ON tests
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_test_questions_updated_at
+    BEFORE UPDATE ON test_questions
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_test_options_updated_at
+    BEFORE UPDATE ON test_options
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_test_attempts_updated_at
+    BEFORE UPDATE ON test_attempts
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_faculties_updated_at
+    BEFORE UPDATE ON faculties
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_announcements_updated_at
+    BEFORE UPDATE ON announcements
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_current_affairs_updated_at
+    BEFORE UPDATE ON current_affairs
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_enquiries_updated_at
+    BEFORE UPDATE ON enquiries
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_coupons_updated_at
+    BEFORE UPDATE ON coupons
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_banners_updated_at
+    BEFORE UPDATE ON banners
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_privacy_policy_updated_at
+    BEFORE UPDATE ON privacy_policy
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_terms_conditions_updated_at
+    BEFORE UPDATE ON terms_conditions
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_website_settings_updated_at
+    BEFORE UPDATE ON website_settings
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+ON CONFLICT DO NOTHING;

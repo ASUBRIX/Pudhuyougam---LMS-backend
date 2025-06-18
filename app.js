@@ -39,6 +39,7 @@ const adminPrivacyRoutes = require('./routes/admin/privacy');
 const adminTermsRoutes = require('./routes/admin/terms');
 const adminStudentRoutes = require('./routes/admin/studentManagement');
 const adminSettingRoutes = require('./routes/admin/setting');
+const adminTestRoutes = require('./routes/admin/test');
 
 // Static files
 app.use(express.static(path.join(__dirname, 'public')));
@@ -49,12 +50,7 @@ app.use(cors({ origin: '*', methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
 app.options('*', cors());
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
-app.use(morgan('dev', {
-  skip: function (req, res) {
-    return req.path === '/health';
-  }
-}));
-
+app.use(morgan('dev', {skip: function (req, res) {return req.path === '/health';}}));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: false }));
 app.use(cookieParser());
@@ -94,7 +90,7 @@ app.use('/api/admin/terms', adminTermsRoutes);
 app.use('/api/notice-board', userNoticeBoardRoutes);
 app.use('/api/admin/students', adminStudentRoutes);
 app.use('/api/admin/settings', adminSettingRoutes);
-
+app.use('/api/admin/test',adminTestRoutes);
 
 app.use((req, res, next) => {
   res.status(404).json({ error: 'Endpoint not found' });
