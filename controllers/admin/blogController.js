@@ -164,20 +164,39 @@ const createBlog = async (req, res) => {
       day: 'numeric',
     });
 
-    const result = await query(
-      `INSERT INTO blogs (title, date, author, excerpt, content, image_url, tags, is_published, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) RETURNING *`,
-      [
-        title.trim(), 
-        blogDate, 
-        author.trim(), 
-        excerpt.trim(), 
-        content.trim(), 
-        imageUrl || null, 
-        sanitizedTags, 
-        isPublished !== undefined ? isPublished : true
-      ]
-    );
+    // Check if updated_at column exists
+    const columnCheck = await query(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'blogs' AND column_name = 'updated_at'
+    `);
+    
+    const hasUpdatedAt = columnCheck.rows.length > 0;
+
+    // Build insert query based on available columns
+    let insertQuery;
+    let queryParams;
+
+    if (hasUpdatedAt) {
+      insertQuery = `INSERT INTO blogs (title, date, author, excerpt, content, image_url, tags, is_published, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) RETURNING *`;
+    } else {
+      insertQuery = `INSERT INTO blogs (title, date, author, excerpt, content, image_url, tags, is_published, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP) RETURNING *`;
+    }
+
+    queryParams = [
+      title.trim(), 
+      blogDate, 
+      author.trim(), 
+      excerpt.trim(), 
+      content.trim(), 
+      imageUrl || null, 
+      sanitizedTags, 
+      isPublished !== undefined ? isPublished : true
+    ];
+
+    const result = await query(insertQuery, queryParams);
 
     res.status(201).json({
       success: true,
@@ -258,8 +277,21 @@ const updateBlog = async (req, res) => {
       });
     }
 
-    const result = await query(
-      `UPDATE blogs SET 
+    // Check if updated_at column exists
+    const columnCheck = await query(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'blogs' AND column_name = 'updated_at'
+    `);
+    
+    const hasUpdatedAt = columnCheck.rows.length > 0;
+
+    // Build update query based on available columns
+    let updateQuery;
+    let queryParams;
+
+    if (hasUpdatedAt) {
+      updateQuery = `UPDATE blogs SET 
         title = $1, 
         date = $2, 
         author = $3, 
@@ -269,19 +301,33 @@ const updateBlog = async (req, res) => {
         tags = $7, 
         is_published = $8, 
         updated_at = CURRENT_TIMESTAMP
-       WHERE id = $9 RETURNING *`,
-      [
-        title.trim(), 
-        date || existingBlog.rows[0].date, 
-        author.trim(), 
-        excerpt.trim(), 
-        content.trim(), 
-        imageUrl, 
-        sanitizedTags, 
-        isPublished !== undefined ? isPublished : existingBlog.rows[0].is_published, 
-        id
-      ]
-    );
+       WHERE id = $9 RETURNING *`;
+    } else {
+      updateQuery = `UPDATE blogs SET 
+        title = $1, 
+        date = $2, 
+        author = $3, 
+        excerpt = $4, 
+        content = $5,
+        image_url = $6, 
+        tags = $7, 
+        is_published = $8
+       WHERE id = $9 RETURNING *`;
+    }
+
+    queryParams = [
+      title.trim(), 
+      date || existingBlog.rows[0].date, 
+      author.trim(), 
+      excerpt.trim(), 
+      content.trim(), 
+      imageUrl, 
+      sanitizedTags, 
+      isPublished !== undefined ? isPublished : existingBlog.rows[0].is_published, 
+      id
+    ];
+
+    const result = await query(updateQuery, queryParams);
 
     res.json({
       success: true,
