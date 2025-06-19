@@ -9,44 +9,92 @@ const generateEnrollmentId = require("../../utils/generateEnrollmentId");
 
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || "refresh_secret_fallback";
 
-// ✅ Check if user exists using Firebase idToken and phone number
+/**
+ * Check if user exists using Firebase idToken and phone number
+ * 
+ * @description Verifies Firebase ID token, checks phone number match, and returns user + access token if exists
+ * @route POST /api/users/check-user
+ * @access Public
+ * @param {string} req.body.phone_number - User's phone number
+ * @param {string} req.body.idToken - Firebase ID token for verification
+ * @returns {Object} User object and access token if user exists and has profile data
+ * @returns {Object} Empty object if user doesn't exist or incomplete profile
+ * @returns {Object} Error object on verification failure
+ */
 const checkUser = async (req, res) => {
   const { phone_number, idToken } = req.body;
+  
   try {
+    // Verify Firebase ID token
     const decodedToken = await admin.auth().verifyIdToken(idToken);
     const firebasePhone = decodedToken.phone_number;
+    
+    // Check if phone numbers match
     if (!firebasePhone || firebasePhone !== phone_number) {
-      return res.status(400).json({ error: "Phone number mismatch or not verified." });
+      return res.status(400).json({ 
+        error: "Phone number mismatch or not verified." 
+      });
     }
+    
+    // Look up user by phone number
     const user = await User.findByPhone(firebasePhone);
+    
+    // If user exists and has complete profile data
     if (user && user.first_name) {
       const accessToken = User.generateAccessToken(user);
       return res.json({ user, accessToken });
     } else {
+      // User doesn't exist or incomplete profile
       return res.json({});
     }
+    
   } catch (err) {
     console.error("checkUser error:", err);
-    res.status(401).json({ error: "Invalid token or user check failed." });
+    res.status(401).json({ 
+      error: "Invalid token or user check failed." 
+    });
   }
 };
 
-// ✅ Register user (after OTP for new users)
+/**
+ * Register user (after OTP verification for new users)
+ * 
+ * @description Creates new user account and student profile if role is student. Sets refresh token cookie.
+ * @route POST /api/users/register
+ * @access Public
+ * @param {string} req.body.first_name - User's first name (required)
+ * @param {string} req.body.last_name - User's last name (required)
+ * @param {string} req.body.email - User's email address (required)
+ * @param {string} req.body.password_hash - Hashed password (required)
+ * @param {string} req.body.phone_number - User's phone number
+ * @param {string} req.body.role - User's role (defaults to "student")
+ * @returns {Object} User object and access token on success
+ * @returns {Object} Error object on validation failure or duplicate data
+ */
 const register = async (req, res) => {
   try {
     const { first_name, last_name, email, password_hash, phone_number, role } = req.body;
+    
+    // Validate required fields
     if (!first_name || !last_name || !email || !password_hash) {
       return res.status(400).json({
         error: "First name, last name, email, and password are required.",
       });
     }
 
+    // Check for existing email
     const existingEmail = await User.findByEmail(email);
-    if (existingEmail) return res.status(400).json({ error: "Email already exists." });
+    if (existingEmail) {
+      return res.status(400).json({ error: "Email already exists." });
+    }
 
+    // Check for existing phone number with complete profile
     const existingPhone = await User.findByPhone(phone_number);
-    if (existingPhone && existingPhone.first_name) return res.status(400).json({ error: "Phone number already exists." });
+    if (existingPhone && existingPhone.first_name) {
+      return res.status(400).json({ error: "Phone number already exists." });
+    }
 
+    // Create new user
     const user = await User.create({
       first_name,
       last_name,
@@ -56,8 +104,9 @@ const register = async (req, res) => {
       role: role || "student",
     });
 
+    // Create student profile if user role is student
     if (user.role === "student") {
-      const enrollmentId = await generateEnrollmentId(); // 🔁 consistent STUxxx logic
+      const enrollmentId = await generateEnrollmentId(); // Generate unique STUxxx ID
 
       await Student.create({
         userId: user.id,
@@ -75,27 +124,42 @@ const register = async (req, res) => {
       });
     }
 
+    // Generate tokens
     const accessToken = User.generateAccessToken(user);
     const refreshToken = User.generateRefreshToken(user);
 
+    // Set refresh token as HTTP-only cookie
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: true,
       sameSite: "Strict",
-      maxAge: 15 * 24 * 60 * 60 * 1000,
+      maxAge: 15 * 24 * 60 * 60 * 1000, // 15 days
     });
 
     res.status(200).json({ user, accessToken });
+    
   } catch (err) {
     console.error("User registration error:", err);
     res.status(500).json({ error: "User registration failed." });
   }
 };
 
-// ✅ Refresh token endpoint
+/**
+ * Refresh access token using refresh token from cookie
+ * 
+ * @description Validates refresh token from HTTP-only cookie and generates new access token
+ * @route POST /api/users/refresh-token (not shown in routes but available)
+ * @access Public (but requires valid refresh token cookie)
+ * @returns {Object} New access token on success
+ * @returns {Object} Error object on invalid/expired refresh token
+ */
 const refreshAccessToken = (req, res) => {
   const refreshToken = req.cookies.refreshToken;
-  if (!refreshToken) return res.status(401).json({ error: "No refresh token provided" });
+  
+  if (!refreshToken) {
+    return res.status(401).json({ error: "No refresh token provided" });
+  }
+  
   try {
     const userData = jwt.verify(refreshToken, JWT_REFRESH_SECRET);
     const newAccessToken = User.generateAccessToken(userData);
@@ -105,21 +169,39 @@ const refreshAccessToken = (req, res) => {
   }
 };
 
-// ✅ Get all users (for admin)
+/**
+ * Get all users (for admin only)
+ * 
+ * @description Retrieves all users in the system. Protected by admin middleware.
+ * @route GET /api/users
+ * @access Protected (Admin only)
+ * @returns {Array} Array of all user objects
+ * @returns {Object} Error object on failure
+ */
 const getAllUsers = async (req, res) => {
   try {
     const users = await User.findAll();
     res.status(200).json(users);
   } catch (err) {
+    console.error("Get all users error:", err);
     res.status(500).json({ error: "Failed to fetch users." });
   }
 };
 
-// ✅ Get current user profile
+/**
+ * Get current user profile with student details
+ * 
+ * @description Retrieves authenticated user's profile with LEFT JOIN to student data
+ * @route GET /api/users/me
+ * @access Protected (Authenticated users)
+ * @returns {Object} Combined user and student profile data
+ * @returns {Object} Error object if user not found
+ */
 const getProfile = async (req, res) => {
   try {
     const userId = req.user?.id || req.userId;
 
+    // JOIN users and students tables to get complete profile
     const result = await query(
       `SELECT 
         u.id AS user_id,
@@ -147,14 +229,28 @@ const getProfile = async (req, res) => {
       [userId]
     );
 
-    if (!result.rows.length) return res.status(404).json({ error: "User not found" });
+    if (!result.rows.length) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    
     res.status(200).json(result.rows[0]);
+    
   } catch (err) {
+    console.error("Get profile error:", err);
     res.status(500).json({ error: "Server error" });
   }
 };
 
-// ✅ Update user + student profile
+/**
+ * Update user and student profile
+ * 
+ * @description Updates both users and students table data for authenticated user
+ * @route PUT /api/users/me (not shown in routes but available)
+ * @access Protected (Authenticated users)
+ * @param {Object} req.body - User and student data to update
+ * @returns {Object} Updated user and student objects
+ * @returns {Object} Error object on failure
+ */
 const updateProfile = async (req, res) => {
   try {
     const userId = req.user?.id || req.userId;
@@ -176,6 +272,7 @@ const updateProfile = async (req, res) => {
       courses,
     } = req.body;
 
+    // Update users table
     const userUpdate = await query(
       `UPDATE users SET 
         first_name = $1, last_name = $2, email = $3, phone_number = $4, updated_at = NOW()
@@ -183,8 +280,11 @@ const updateProfile = async (req, res) => {
       [first_name, last_name, email, phone_number, userId]
     );
 
-    if (!userUpdate.rows.length) return res.status(404).json({ error: "User not found" });
+    if (!userUpdate.rows.length) {
+      return res.status(404).json({ error: "User not found" });
+    }
 
+    // Update students table
     const studentResult = await query(
       `UPDATE students SET 
         first_name = $1, last_name = $2, email = $3, phone = $4, enrollment_date = $5,
@@ -209,12 +309,22 @@ const updateProfile = async (req, res) => {
       user: userUpdate.rows[0],
       student: studentResult.rows[0] || null,
     });
+    
   } catch (err) {
+    console.error("Update profile error:", err);
     res.status(500).json({ error: "Server error" });
   }
 };
 
-// ✅ Prefill Contact Form
+/**
+ * Get contact form prefill details
+ * 
+ * @description Retrieves user's basic info for prefilling contact forms
+ * @route GET /api/users/contact-prefill (not shown in routes but available)
+ * @access Protected (Authenticated users)
+ * @returns {Object} User's name, email, and phone for form prefill
+ * @returns {Object} Error object on failure
+ */
 const getContactPrefillDetails = async (req, res) => {
   try {
     const userId = req.user?.id || req.userId;
@@ -224,8 +334,12 @@ const getContactPrefillDetails = async (req, res) => {
       [userId]
     );
 
-    if (!result.rows.length) return res.status(404).json({ error: "User not found" });
+    if (!result.rows.length) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    
     res.status(200).json(result.rows[0]);
+    
   } catch (err) {
     console.error("Contact prefill error:", err);
     res.status(500).json({ error: "Server error" });
