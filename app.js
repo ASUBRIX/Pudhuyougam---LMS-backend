@@ -4,6 +4,7 @@ const path = require('path');
 const cors = require('cors');
 const morgan = require('morgan');
 const cookieParser = require('cookie-parser');
+const { specs, swaggerUi } = require('./swagger');
 require('./config/database');
 
 // Import user routes
@@ -46,7 +47,11 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads/gallery', express.static(path.join(__dirname, 'public/uploads/gallery')));
 
 // Middleware
-app.use(cors({ origin: '*', methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], allowedHeaders: ['Content-Type', 'Authorization', 'auth_key'] }));
+app.use(cors({ 
+  origin: '*', 
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], 
+  allowedHeaders: ['Content-Type', 'Authorization', 'auth_key'] 
+}));
 app.options('*', cors());
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
@@ -54,8 +59,68 @@ app.use(morgan('dev', {skip: function (req, res) {return req.path === '/health';
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: false }));
 app.use(cookieParser());
+
+// Health check
 app.get('/health', (req, res) => res.sendStatus(200));
-app.get('/', (req, res) => res.send('Welcome to Pudhuyugam LMS Backend API'));
+
+// Root endpoint with documentation link
+app.get('/', (req, res) => {
+  res.send(`
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px;">
+      <h1 style="color: #2c3e50;">Welcome to Pudhuyugam LMS Backend API</h1>
+      <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+        <h3>Quick Links:</h3>
+        <ul style="list-style: none; padding: 0;">
+          <li style="margin: 10px 0;">
+            <a href="/api-docs" style="background: #007bff; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; display: inline-block;">
+              📚 API Documentation
+            </a>
+          </li>
+          <li style="margin: 10px 0;">
+            <a href="/health" style="background: #28a745; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; display: inline-block;">
+              🏥 Health Check
+            </a>
+          </li>
+          <li style="margin: 10px 0;">
+            <a href="/api-docs.json" style="background: #6c757d; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; display: inline-block;">
+              📄 OpenAPI JSON
+            </a>
+          </li>
+        </ul>
+      </div>
+      <p style="color: #6c757d;">
+        <strong>Base URLs:</strong><br>
+        • User APIs: <code>/api</code><br>
+        • Admin APIs: <code>/api/admin</code>
+      </p>
+    </div>
+  `);
+});
+
+// Swagger Documentation Routes
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, {
+  explorer: true,
+  customCss: `
+    .swagger-ui .topbar { display: none; }
+    .swagger-ui .info .title { color: #2c3e50; font-size: 36px; }
+    .swagger-ui .info .description { font-size: 14px; line-height: 1.6; }
+    .swagger-ui .scheme-container { background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0; }
+  `,
+  customSiteTitle: 'Pudhuyugam LMS API Documentation',
+  swaggerOptions: {
+    docExpansion: 'none',
+    filter: true,
+    showRequestDuration: true,
+    tryItOutEnabled: true,
+    persistAuthorization: true
+  }
+}));
+
+// API Documentation JSON endpoint
+app.get('/api-docs.json', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(specs);
+});
 
 // User routes
 app.use('/api', userHomeRoutes);
@@ -71,6 +136,7 @@ app.use('/api/student', userStudentRoutes);
 app.use('/api/current-affairs', currentAffairsRoutes);
 app.use('/api/slides', slidesRoutes);
 app.use('/api/legal', userLegalRoutes);
+app.use('/api/notice-board', userNoticeBoardRoutes);
 
 // Admin routes
 app.use('/api/admin/login', adminRoutes);
@@ -87,14 +153,26 @@ app.use('/api/admin/faculties', adminFacultyRoutes);
 app.use('/api/admin/gallery', adminGalleryRoutes);
 app.use('/api/admin/privacy', adminPrivacyRoutes);
 app.use('/api/admin/terms', adminTermsRoutes);
-app.use('/api/notice-board', userNoticeBoardRoutes);
 app.use('/api/admin/students', adminStudentRoutes);
 app.use('/api/admin/settings', adminSettingRoutes);
-app.use('/api/admin/test',adminTestRoutes);
+app.use('/api/admin/test', adminTestRoutes);
 
+// 404 handler
 app.use((req, res, next) => {
-  res.status(404).json({ error: 'Endpoint not found' });
+  res.status(404).json({ 
+    error: 'Endpoint not found',
+    message: `The endpoint ${req.method} ${req.path} does not exist`,
+    documentation: '/api-docs'
+  });
+});
+
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({
+    error: 'Internal server error',
+    message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong'
+  });
 });
 
 module.exports = app;
-
