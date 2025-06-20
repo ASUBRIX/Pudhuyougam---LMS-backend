@@ -1,8 +1,6 @@
 const User = require("../../models/user");
 const Student = require("../../models/student");
-const { sendOTP } = require("../../config/sms");
 const jwt = require("jsonwebtoken");
-const bcrypt = require("bcryptjs");
 const { query } = require("../../config/database");
 const admin = require("../../config/firebaseAdmin");
 const generateEnrollmentId = require("../../utils/generateEnrollmentId");
@@ -25,26 +23,21 @@ const checkUser = async (req, res) => {
   const { phone_number, idToken } = req.body;
   
   try {
-    // Verify Firebase ID token
     const decodedToken = await admin.auth().verifyIdToken(idToken);
     const firebasePhone = decodedToken.phone_number;
     
-    // Check if phone numbers match
     if (!firebasePhone || firebasePhone !== phone_number) {
       return res.status(400).json({ 
         error: "Phone number mismatch or not verified." 
       });
     }
     
-    // Look up user by phone number
     const user = await User.findByPhone(firebasePhone);
     
-    // If user exists and has complete profile data
     if (user && user.first_name) {
       const accessToken = User.generateAccessToken(user);
       return res.json({ user, accessToken });
     } else {
-      // User doesn't exist or incomplete profile
       return res.json({});
     }
     
@@ -75,26 +68,22 @@ const register = async (req, res) => {
   try {
     const { first_name, last_name, email, password_hash, phone_number, role } = req.body;
     
-    // Validate required fields
     if (!first_name || !last_name || !email || !password_hash) {
       return res.status(400).json({
         error: "First name, last name, email, and password are required.",
       });
     }
 
-    // Check for existing email
     const existingEmail = await User.findByEmail(email);
     if (existingEmail) {
       return res.status(400).json({ error: "Email already exists." });
     }
 
-    // Check for existing phone number with complete profile
     const existingPhone = await User.findByPhone(phone_number);
     if (existingPhone && existingPhone.first_name) {
       return res.status(400).json({ error: "Phone number already exists." });
     }
 
-    // Create new user
     const user = await User.create({
       first_name,
       last_name,
@@ -104,36 +93,51 @@ const register = async (req, res) => {
       role: role || "student",
     });
 
-    // Create student profile if user role is student
     if (user.role === "student") {
-      const enrollmentId = await generateEnrollmentId(); // Generate unique STUxxx ID
+     
+      let existingStudent = await Student.findByUserId(user.id);
+      if (!existingStudent) {
+        existingStudent = await Student.findByPhone(phone_number);
+      }
+      
+      if (!existingStudent) {
+        const enrollmentId = await generateEnrollmentId();
 
-      await Student.create({
-        userId: user.id,
-        firstName: first_name,
-        lastName: last_name,
-        email,
-        phone: phone_number,
-        enrollmentDate: new Date(),
-        status: "active",
-        program: "",
-        semester: "",
-        year: "",
-        courses: null,
-        enrollmentId
-      });
+       const newStudent =  await Student.create({
+          userId: user.id,
+          firstName: first_name,
+          lastName: last_name,
+          email,
+          phone: phone_number,
+          enrollmentDate: new Date(),
+          status: "active",
+          program: "",
+          semester: null,
+          year: null,
+          courses: null,
+          enrollmentId,
+          
+        });
+    console.log("New student created:", newStudent);
+      } else {
+        await Student.update(existingStudent.id, {
+          ...existingStudent,
+          userId: user.id,
+          firstName: first_name,
+          lastName: last_name,
+          email
+        });
+      }
     }
 
-    // Generate tokens
     const accessToken = User.generateAccessToken(user);
     const refreshToken = User.generateRefreshToken(user);
 
-    // Set refresh token as HTTP-only cookie
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: true,
       sameSite: "Strict",
-      maxAge: 15 * 24 * 60 * 60 * 1000, // 15 days
+      maxAge: 15 * 24 * 60 * 60 * 1000,
     });
 
     res.status(200).json({ user, accessToken });
@@ -201,7 +205,6 @@ const getProfile = async (req, res) => {
   try {
     const userId = req.user?.id || req.userId;
 
-    // JOIN users and students tables to get complete profile
     const result = await query(
       `SELECT 
         u.id AS user_id,
@@ -221,6 +224,7 @@ const getProfile = async (req, res) => {
         s.year,
         s.status,
         s.courses,
+        s.enrollment_id,
         s.created_at,
         s.updated_at
       FROM users u
@@ -272,7 +276,6 @@ const updateProfile = async (req, res) => {
       courses,
     } = req.body;
 
-    // Update users table
     const userUpdate = await query(
       `UPDATE users SET 
         first_name = $1, last_name = $2, email = $3, phone_number = $4, updated_at = NOW()
@@ -284,7 +287,6 @@ const updateProfile = async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    // Update students table
     const studentResult = await query(
       `UPDATE students SET 
         first_name = $1, last_name = $2, email = $3, phone = $4, enrollment_date = $5,

@@ -1,7 +1,5 @@
 SET client_min_messages TO warning;
--- ============================
--- DROP TABLES (in dependency order)
--- ============================
+
 DROP TABLE IF EXISTS test_options CASCADE;
 DROP TABLE IF EXISTS test_questions CASCADE;
 DROP TABLE IF EXISTS test_attempts CASCADE;
@@ -38,7 +36,10 @@ DROP TABLE IF EXISTS enquiries CASCADE;
 DROP TABLE IF EXISTS coupons CASCADE;
 DROP TABLE IF EXISTS chat_messages CASCADE;
 
--- Function to automatically update updated_at timestamp
+DROP SEQUENCE IF EXISTS enrollment_id_seq CASCADE;
+
+CREATE SEQUENCE enrollment_id_seq START 1;
+
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $
 BEGIN
@@ -47,7 +48,6 @@ BEGIN
 END;
 $ language 'plpgsql';
 
--- Banners
 CREATE TABLE banners (
   id SERIAL PRIMARY KEY,
   title VARCHAR(255) NOT NULL,
@@ -60,7 +60,6 @@ CREATE TABLE banners (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Privacy Policy
 CREATE TABLE privacy_policy (
   id SERIAL PRIMARY KEY,
   content TEXT,
@@ -69,7 +68,6 @@ CREATE TABLE privacy_policy (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Terms and Conditions
 CREATE TABLE terms_conditions (
   id SERIAL PRIMARY KEY,
   content TEXT,
@@ -78,7 +76,6 @@ CREATE TABLE terms_conditions (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Website Settings
 CREATE TABLE website_settings (
   id SERIAL PRIMARY KEY,
   site_name VARCHAR(255),
@@ -98,7 +95,6 @@ CREATE TABLE website_settings (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Users
 CREATE TABLE users (
   id SERIAL PRIMARY KEY,
   first_name VARCHAR(50) NOT NULL,
@@ -126,10 +122,10 @@ CREATE TABLE students (
   program VARCHAR(100),
   semester VARCHAR(50),
   year VARCHAR(50),
-  status VARCHAR(20) DEFAULT 'active',
+  status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'blocked')),
   courses TEXT[],
   profile_picture TEXT,
-  enrollment_id VARCHAR(20) UNIQUE, -- e.g., STU001, STU002
+  enrollment_id VARCHAR(20) UNIQUE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -140,7 +136,6 @@ CREATE TABLE user_otps (
     otp_expires TIMESTAMP
 );
 
--- Create default admin user
 INSERT INTO users (first_name, last_name, email, password_hash, role, created_at)
 VALUES (
   'Admin',
@@ -152,7 +147,6 @@ VALUES (
 )
 ON CONFLICT (email) DO NOTHING;
 
--- Courses
 CREATE TABLE courses (
   id SERIAL PRIMARY KEY,
   title VARCHAR(255) NOT NULL,
@@ -179,7 +173,6 @@ CREATE TABLE courses (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Enrollments
 CREATE TABLE enrollments (
   id SERIAL PRIMARY KEY,
   student_id INTEGER REFERENCES users(id),
@@ -189,14 +182,12 @@ CREATE TABLE enrollments (
   UNIQUE(student_id, course_id)
 );
 
--- Course Categories
 CREATE TABLE course_categories (
   id SERIAL PRIMARY KEY,
   title VARCHAR(255) NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Course Subcategories
 CREATE TABLE course_subcategories (
   id SERIAL PRIMARY KEY,
   category_id INTEGER REFERENCES course_categories(id) ON DELETE CASCADE,
@@ -204,7 +195,6 @@ CREATE TABLE course_subcategories (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Course Modules
 CREATE TABLE course_modules (
   id SERIAL PRIMARY KEY,
   course_id INTEGER REFERENCES courses(id) ON DELETE CASCADE,
@@ -213,7 +203,6 @@ CREATE TABLE course_modules (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Course Lessons
 CREATE TABLE course_lessons (
   id SERIAL PRIMARY KEY,
   module_id INTEGER REFERENCES course_modules(id) ON DELETE CASCADE,
@@ -226,7 +215,6 @@ CREATE TABLE course_lessons (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Course FAQs
 CREATE TABLE course_faqs (
   id SERIAL PRIMARY KEY,
   course_id INTEGER REFERENCES courses(id) ON DELETE CASCADE,
@@ -235,7 +223,6 @@ CREATE TABLE course_faqs (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Course Pricing Plans
 CREATE TABLE course_pricing_plans (
   id SERIAL PRIMARY KEY,
   course_id INTEGER REFERENCES courses(id) ON DELETE CASCADE,
@@ -248,7 +235,6 @@ CREATE TABLE course_pricing_plans (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Course Content Modules
 CREATE TABLE course_content_modules (
   id SERIAL PRIMARY KEY,
   course_id INTEGER REFERENCES courses(id) ON DELETE CASCADE,
@@ -258,7 +244,6 @@ CREATE TABLE course_content_modules (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Course Content Folders
 CREATE TABLE course_content_folders (
   id SERIAL PRIMARY KEY,
   module_id INTEGER REFERENCES course_content_modules(id) ON DELETE CASCADE,
@@ -269,7 +254,6 @@ CREATE TABLE course_content_folders (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Course Contents
 CREATE TABLE course_contents (
   id SERIAL PRIMARY KEY,
   folder_id INTEGER REFERENCES course_content_folders(id) ON DELETE CASCADE,
@@ -282,7 +266,6 @@ CREATE TABLE course_contents (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Test Management
 CREATE TABLE test_folders (
   id SERIAL PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
@@ -340,7 +323,6 @@ CREATE TABLE test_attempts (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Gallery Items
 CREATE TABLE gallery_items (
   id SERIAL PRIMARY KEY,
   name TEXT NOT NULL,
@@ -368,7 +350,6 @@ CREATE TABLE faculties (
   board_member BOOLEAN DEFAULT FALSE
 );
 
--- Enhanced Blogs table with better constraints and indexing
 CREATE TABLE blogs (
   id SERIAL PRIMARY KEY,
   title VARCHAR(255) NOT NULL CHECK (LENGTH(TRIM(title)) > 0),
@@ -383,7 +364,6 @@ CREATE TABLE blogs (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
--- Announcements
 CREATE TABLE announcements (
   id SERIAL PRIMARY KEY,
   title VARCHAR(255) NOT NULL,
@@ -393,7 +373,6 @@ CREATE TABLE announcements (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Current Affairs
 CREATE TABLE current_affairs (
   id SERIAL PRIMARY KEY,
   title VARCHAR(255) NOT NULL,
@@ -405,7 +384,6 @@ CREATE TABLE current_affairs (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Enquiries
 CREATE TABLE enquiries (
   id SERIAL PRIMARY KEY,
   name VARCHAR(100) NOT NULL,
@@ -418,7 +396,6 @@ CREATE TABLE enquiries (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Coupons
 CREATE TABLE coupons (
   id SERIAL PRIMARY KEY,
   code VARCHAR(50) NOT NULL UNIQUE,
@@ -431,21 +408,23 @@ CREATE TABLE coupons (
   updated_at TIMESTAMP DEFAULT NOW()
 );
 
--- Chat Messages Table
 CREATE TABLE chat_messages (
   id SERIAL PRIMARY KEY,
-  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE, -- student id
+  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
   sender VARCHAR(20) NOT NULL CHECK (sender IN ('admin', 'student')),
   text TEXT,
-  type VARCHAR(20) DEFAULT 'text',      -- 'text', 'file', etc.
+  type VARCHAR(20) DEFAULT 'text',      
   file_type VARCHAR(20),
   file_size VARCHAR(20),
   timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Create indexes for better performance
 CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_users_phone ON users(phone_number);
 CREATE INDEX idx_students_email ON students(email);
+CREATE INDEX idx_students_phone ON students(phone);
+CREATE INDEX idx_students_user_id ON students(user_id);
+CREATE INDEX idx_students_enrollment_id ON students(enrollment_id);
 CREATE INDEX idx_courses_instructor ON courses(instructor_id);
 CREATE INDEX idx_enrollments_student ON enrollments(student_id);
 CREATE INDEX idx_enrollments_course ON enrollments(course_id);
@@ -458,7 +437,6 @@ CREATE INDEX idx_test_attempts_user ON test_attempts(user_id);
 CREATE INDEX idx_chat_messages_user_id ON chat_messages(user_id);
 CREATE INDEX idx_chat_messages_sender ON chat_messages(sender);
 
--- Blog specific indexes for better performance
 CREATE INDEX idx_blogs_is_published ON blogs(is_published);
 CREATE INDEX idx_blogs_created_at ON blogs(created_at DESC);
 CREATE INDEX idx_blogs_author ON blogs(author);
@@ -467,7 +445,6 @@ CREATE INDEX idx_blogs_title_search ON blogs USING GIN(to_tsvector('english', ti
 CREATE INDEX idx_blogs_content_search ON blogs USING GIN(to_tsvector('english', content));
 CREATE INDEX idx_blogs_published_created ON blogs(is_published, created_at DESC);
 
--- Triggers to automatically update updated_at on row updates
 CREATE TRIGGER update_blogs_updated_at
     BEFORE UPDATE ON blogs
     FOR EACH ROW
@@ -567,5 +544,3 @@ CREATE TRIGGER update_website_settings_updated_at
     BEFORE UPDATE ON website_settings
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
-
-ON CONFLICT DO NOTHING;

@@ -1,34 +1,31 @@
 const { query } = require('../config/database');
 
 class Student {
-  static async create(data) {
-    const sql = `
-      INSERT INTO students (
-        user_id, first_name, last_name, email, phone,
-        enrollment_date, status, program, semester, year,
-        courses, profile_picture, enrollment_id
-      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
-      RETURNING *;
-    `;
-    const values = [
-      data.userId,
-      data.firstName,
-      data.lastName,
-      data.email,
-      data.phone,
-      data.enrollmentDate,
-      data.status || 'active',
-      data.program || '',
-      data.semester || '',
-      data.year || '',
-      data.courses || null,
-      data.profile_picture || null,
-      data.enrollmentId || null
-    ];
-    const result = await query(sql, values);
-    return result.rows[0];
-  }
 
+  static async create(data) {
+  console.log("Creating student with data:", data);
+  const sql = `
+    INSERT INTO students (
+      user_id, first_name, last_name, email, phone,
+      enrollment_date, status, program, enrollment_id, profile_picture
+    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+    RETURNING *;
+  `;
+  const values = [
+    data.userId,
+    data.firstName,
+    data.lastName,
+    data.email,
+    data.phone,
+    data.enrollmentDate || new Date(),
+    data.status || 'active',
+    data.program || '',
+    data.enrollmentId || null,
+    data.profile_picture || null 
+  ];
+  const result = await query(sql, values);
+  return result.rows[0];
+}
   static async update(id, data) {
     const sql = `
       UPDATE students SET
@@ -40,13 +37,10 @@ class Student {
         enrollment_date = $6,
         status = $7,
         program = $8,
-        semester = $9,
-        year = $10,
-        courses = $11,
-        profile_picture = $12,
-        enrollment_id = $13,
+        enrollment_id = $9,
+        profile_picture = $10,
         updated_at = CURRENT_TIMESTAMP
-      WHERE id = $14
+      WHERE id = $11
       RETURNING *;
     `;
     const values = [
@@ -55,14 +49,11 @@ class Student {
       data.lastName,
       data.email,
       data.phone,
-      data.enrollmentDate,
+      data.enrollmentDate || new Date(),
       data.status || 'active',
       data.program || '',
-      data.semester || '',
-      data.year || '',
-      data.courses || null,
-      data.profile_picture || null,
       data.enrollmentId || null,
+      data.profile_picture || null,
       id
     ];
     const result = await query(sql, values);
@@ -81,6 +72,16 @@ class Student {
 
   static async findByUserId(userId) {
     const result = await query('SELECT * FROM students WHERE user_id = $1', [userId]);
+    return result.rows[0];
+  }
+
+  static async findByPhone(phone) {
+    const result = await query('SELECT * FROM students WHERE phone = $1', [phone]);
+    return result.rows[0];
+  }
+
+  static async findByEmail(email) {
+    const result = await query('SELECT * FROM students WHERE email = $1', [email]);
     return result.rows[0];
   }
 
