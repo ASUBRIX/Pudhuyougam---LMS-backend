@@ -1,44 +1,254 @@
 const { query } = require('../../config/database');
 
-// --- CATEGORY LOGIC --- (Keep existing)
+
 const getAllCategories = async (req, res) => {
   try {
-    const categories = await query('SELECT * FROM course_categories ORDER BY id');
-    const subcategories = await query('SELECT * FROM course_subcategories ORDER BY id');
+    const categories = await query(`
+      SELECT 
+        cc.*,
+        COALESCE(COUNT(csc.id), 0) as subcategory_count
+      FROM course_categories cc
+      LEFT JOIN course_subcategories csc ON cc.id = csc.category_id
+      GROUP BY cc.id, cc.title, cc.created_at
+      ORDER BY cc.created_at DESC
+    `);
+    const subcategories = await query(`
+      SELECT csc.*, cc.title as category_title
+      FROM course_subcategories csc
+      JOIN course_categories cc ON csc.category_id = cc.id
+      ORDER BY cc.title, csc.title
+    `);
+    
     const merged = categories.rows.map(cat => ({
       ...cat,
+      subcategory_count: parseInt(cat.subcategory_count) || 0,
       subcategories: subcategories.rows.filter(sub => sub.category_id === cat.id)
     }));
-    res.json(merged);
+    res.json({
+      success: true,
+      data: merged,
+      total: categories.rows.length
+    });
+    
   } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch categories' });
+    console.error('Error fetching categories:', err);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to fetch categories',
+      details: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
   }
 };
-
 const createCategoryWithSubs = async (req, res) => {
-  const { title, subcategories } = req.body;
+  const { title, subcategories = [] } = req.body;
+  
+  
   try {
-    const result = await query(
-      'INSERT INTO course_categories (title) VALUES ($1) RETURNING id',
-      [title]
-    );
-    const categoryId = result.rows[0].id;
-    for (const sub of subcategories) {
-      await query(
-        'INSERT INTO course_subcategories (category_id, title) VALUES ($1, $2)',
-        [categoryId, sub]
-      );
+    if (!title || title.trim().length < 2) {
+      return res.status(400).json({
+        success: false,
+        error: 'Category title must be at least 2 characters long'
+      });
     }
-    res.status(201).json({ message: 'Category and subcategories created' });
+
+    if (title.trim().length > 100) {
+      return res.status(400).json({
+        success: false,
+        error: 'Category title must be less than 100 characters'
+      });
+    }
+
+    const existingCategory = await query(
+      'SELECT id FROM course_categories WHERE LOWER(title) = LOWER($1)',
+      [title.trim()]
+    );
+
+    if (existingCategory.rows.length > 0) {
+      return res.status(409).json({
+        success: false,
+        error: 'Category with this name already exists'
+      });
+    }
+
+    const validSubcategories = subcategories
+      .filter(sub => sub && typeof sub === 'string' && sub.trim().length >= 2 && sub.trim().length <= 100)
+      .map(sub => sub.trim());
+
+
+    await query('BEGIN');
+
+    try {
+      const categoryResult = await query(
+        'INSERT INTO course_categories (title) VALUES ($1) RETURNING *',
+        [title.trim()]
+      );
+      
+      
+      const categoryId = categoryResult.rows[0].id;
+      const createdSubcategories = [];
+
+      for (const subTitle of validSubcategories) {
+        const existingSub = await query(
+          'SELECT id FROM course_subcategories WHERE LOWER(title) = LOWER($1) AND category_id = $2',
+          [subTitle, categoryId]
+        );
+
+        if (existingSub.rows.length === 0) {
+          const subResult = await query(
+            'INSERT INTO course_subcategories (category_id, title) VALUES ($1, $2) RETURNING *',
+            [categoryId, subTitle]
+          );
+          createdSubcategories.push(subResult.rows[0]);
+        }
+      }
+
+      await query('COMMIT');
+
+      const newCategory = {
+        ...categoryResult.rows[0],
+        subcategories: createdSubcategories,
+        subcategory_count: createdSubcategories.length
+      };
+
+
+      res.status(201).json({
+        success: true,
+        message: 'Category created successfully',
+        data: newCategory
+      });
+
+    } catch (innerErr) {
+      await query('ROLLBACK');
+      console.error('Transaction error:', innerErr);
+      throw innerErr;
+    }
+
   } catch (err) {
-    res.status(500).json({ error: 'Failed to create category' });
+    console.error('Error creating category:', err);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to create category',
+      details: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
   }
 };
 
-// --- ENHANCED COURSE LOGIC ---
+// Add subcategories to existing category
+const addSubcategoriesToCategory = async (req, res) => {
+  const { categoryId } = req.params;
+  const { subcategories = [] } = req.body;
+
+  try {
+    // Validate category exists
+    const categoryExists = await query(
+      'SELECT id, title FROM course_categories WHERE id = $1',
+      [categoryId]
+    );
+
+    if (categoryExists.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Category not found'
+      });
+    }
+
+    // Validate subcategories
+    const validSubcategories = subcategories
+      .filter(sub => sub && typeof sub === 'string' && sub.trim().length >= 2 && sub.trim().length <= 100)
+      .map(sub => sub.trim());
+
+    if (validSubcategories.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'At least one valid subcategory is required'
+      });
+    }
+
+    const createdSubcategories = [];
+
+    for (const subTitle of validSubcategories) {
+      // Check for duplicate
+      const existingSub = await query(
+        'SELECT id FROM course_subcategories WHERE LOWER(title) = LOWER($1) AND category_id = $2',
+        [subTitle, categoryId]
+      );
+
+      if (existingSub.rows.length === 0) {
+        const subResult = await query(
+          'INSERT INTO course_subcategories (category_id, title) VALUES ($1, $2) RETURNING *',
+          [categoryId, subTitle]
+        );
+        createdSubcategories.push(subResult.rows[0]);
+      }
+    }
+
+    res.status(201).json({
+      success: true,
+      message: `${createdSubcategories.length} subcategories added successfully`,
+      data: createdSubcategories
+    });
+
+  } catch (err) {
+    console.error('Error adding subcategories:', err);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to add subcategories'
+    });
+  }
+};
+
+// Delete category
+const deleteCategory = async (req, res) => {
+  const { categoryId } = req.params;
+
+  try {
+    // Check if category exists and has courses
+    const categoryCheck = await query(`
+      SELECT 
+        cc.id, 
+        cc.title,
+        COUNT(c.id) as course_count
+      FROM course_categories cc
+      LEFT JOIN courses c ON c.tags @> ARRAY[cc.title]
+      WHERE cc.id = $1
+      GROUP BY cc.id, cc.title
+    `, [categoryId]);
+
+    if (categoryCheck.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Category not found'
+      });
+    }
+
+    const courseCount = parseInt(categoryCheck.rows[0].course_count);
+    if (courseCount > 0) {
+      return res.status(409).json({
+        success: false,
+        error: `Cannot delete category. ${courseCount} courses are using this category.`
+      });
+    }
+
+    // Delete category (subcategories will be deleted via CASCADE)
+    await query('DELETE FROM course_categories WHERE id = $1', [categoryId]);
+
+    res.json({
+      success: true,
+      message: 'Category deleted successfully'
+    });
+
+  } catch (err) {
+    console.error('Error deleting category:', err);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to delete category'
+    });
+  }
+};
+
+// Keep your existing functions
 const getAllCourses = async (req, res) => {
   try {
-    // First, let's check what columns exist in your courses table
     const result = await query(`
       SELECT 
         c.*,
@@ -78,20 +288,15 @@ const getCourseStats = async (req, res) => {
   }
 };
 
-// ENHANCED: Create course with frontend data structure
 const createCourse = async (req, res) => {
   try {
     console.log('Creating course with data:', req.body);
     
-    // Handle both frontend wizard data and existing API data
     const {
-      // From frontend wizard
       title,
       description,
       category,
       level = 'beginner',
-      
-      // Existing fields (with defaults)
       short_description = description || '',
       full_description = description || '',
       thumbnail = '',
@@ -105,16 +310,14 @@ const createCourse = async (req, res) => {
       is_featured = false,
       total_lectures = 0,
       total_duration = '',
-      instructor_id = req.user?.id || 1, // Use logged-in admin or default
+      instructor_id = req.user?.id || 1,
       message_to_reviewer = '',
       review_status = 'pending',
       visibility_status = 'draft'
     } = req.body;
 
-    // Handle tags array - PostgreSQL expects array format
     const tagsArray = category ? [category] : [];
 
-    // Validate required fields
     if (!title || !title.trim()) {
       return res.status(400).json({ error: 'Course title is required' });
     }
@@ -153,19 +356,15 @@ const createCourse = async (req, res) => {
   }
 };
 
-// ENHANCED: Update course with frontend data structure
 const updateCourse = async (req, res) => {
   try {
     console.log('Updating course with data:', req.body);
     
     const {
-      // From frontend wizard
       title,
       description,
       category,
       level,
-      
-      // Existing fields
       short_description,
       full_description,
       thumbnail = '',
@@ -186,11 +385,9 @@ const updateCourse = async (req, res) => {
       visibility_status = 'draft'
     } = req.body;
 
-    // Use description for both short and full if not provided separately
     const finalShortDescription = short_description || description || '';
     const finalFullDescription = full_description || description || '';
     
-    // Handle tags array - if tags is provided use it, otherwise use category
     let finalTags;
     if (tags && Array.isArray(tags)) {
       finalTags = tags;
@@ -234,7 +431,6 @@ const updateCourse = async (req, res) => {
 
 const deleteCourse = async (req, res) => {
   try {
-    // Also delete related content
     await query('DELETE FROM course_content_modules WHERE course_id = $1', [req.params.id]);
     await query('DELETE FROM course_pricing_plans WHERE course_id = $1', [req.params.id]);
     await query('DELETE FROM courses WHERE id = $1', [req.params.id]);
@@ -246,7 +442,6 @@ const deleteCourse = async (req, res) => {
   }
 };
 
-// NEW: Update course settings (for advanced settings step)
 const updateCourseSettings = async (req, res) => {
   try {
     const {
@@ -259,7 +454,6 @@ const updateCourseSettings = async (req, res) => {
       allowDownloads
     } = req.body;
 
-    // For now, we'll update the existing fields that exist in your table
     const result = await query(
       `UPDATE courses SET
         visibility_status = $1,
@@ -286,7 +480,6 @@ const updateCourseSettings = async (req, res) => {
   }
 };
 
-// Keep existing module functions
 const getModulesForCourse = async (req, res) => {
   try {
     const result = await query('SELECT * FROM course_content_modules WHERE course_id = $1 ORDER BY sort_order', [req.params.courseId]);
@@ -309,7 +502,6 @@ const createModule = async (req, res) => {
   }
 };
 
-// Keep existing mock reviews
 const getCourseReviews = async (req, res) => {
   try {
     res.json([
@@ -324,6 +516,8 @@ const getCourseReviews = async (req, res) => {
 module.exports = {
   getAllCategories,
   createCategoryWithSubs,
+  addSubcategoriesToCategory,
+  deleteCategory,
   getAllCourses,
   getCourseById,
   getCourseStats,
