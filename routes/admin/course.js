@@ -19,6 +19,9 @@ router.post('/', courseController.createCourse);
 router.put('/:id', courseController.updateCourse);
 router.delete('/:id', courseController.deleteCourse);
 
+// NEW: Course settings (for advanced settings step)
+router.put('/:id/settings', courseController.updateCourseSettings);
+
 // Course content modules
 router.get('/modules/:courseId', courseController.getModulesForCourse);
 router.post('/modules', courseController.createModule);
