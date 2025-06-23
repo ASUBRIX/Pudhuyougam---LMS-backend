@@ -52,7 +52,14 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], 
   allowedHeaders: ['Content-Type', 'Authorization', 'auth_key'] 
 }));
-app.options('*', cors());
+app.use(cors({ 
+  origin: process.env.NODE_ENV === 'production' 
+    ? ['https://server.pudhuyugamacademy.com', 'https://www.server.pudhuyugamacademy.com'] 
+    : '*', 
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], 
+  allowedHeaders: ['Content-Type', 'Authorization', 'auth_key'],
+  credentials: true
+}));
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 app.use(morgan('dev', {skip: function (req, res) {return req.path === '/health';}}));
