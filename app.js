@@ -47,10 +47,15 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads/gallery', express.static(path.join(__dirname, 'public/uploads/gallery')));
 
 app.use(cors({
-  origin: '*',
+  origin: ['https://dev.pudhuyugamacademy.com'],
+  credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'auth_key']
 }));
+
+app.use(cookieParser());
+
+
 
 app.options('*', cors());
 
