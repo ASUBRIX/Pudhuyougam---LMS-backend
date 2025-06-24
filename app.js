@@ -46,51 +46,13 @@ const adminTestRoutes = require('./routes/admin/test');
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads/gallery', express.static(path.join(__dirname, 'public/uploads/gallery')));
 
-// CORS Configuration - FIXED
-const allowedOrigins = [
-  // Production domains
-  'https://server.pudhuyugamacademy.com',
-  'https://www.server.pudhuyugamacademy.com',
-  'https://pudhuyugamacademy.com',
-  'https://www.pudhuyugamacademy.com',
-  
-  // Development domains
-  'https://dev.pudhuyugamacademy.com',
-  'https://www.dev.pudhuyugamacademy.com',
-  'http://localhost:3000',
-  'http://localhost:4000',
-  'http://localhost:5173', // Vite default
-  'http://127.0.0.1:3000',
-  'http://127.0.0.1:4000',
-  'http://127.0.0.1:5173'
-];
-
-// Single CORS configuration
 app.use(cors({
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    
-    // Check if the origin is in the allowed list
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      return callback(null, true);
-    } else {
-      console.log('CORS blocked origin:', origin);
-      return callback(new Error('Not allowed by CORS'));
-    }
-  },
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: [
-    'Content-Type', 
-    'Authorization', 
-    'auth_key',
-    'X-Requested-With',
-    'Accept',
-    'Origin'
-  ],
-  credentials: true,
-  optionsSuccessStatus: 200 // For legacy browser support
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'auth_key']
 }));
+
+app.options('*', cors());
 
 // Additional middleware
 app.set('views', path.join(__dirname, 'views'));
