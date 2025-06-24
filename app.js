@@ -46,18 +46,53 @@ const adminTestRoutes = require('./routes/admin/test');
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads/gallery', express.static(path.join(__dirname, 'public/uploads/gallery')));
 
-// Middleware
-app.use(cors({ 
-  origin: '*', 
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], 
-  allowedHeaders: ['Content-Type', 'Authorization', 'auth_key'] 
+// CORS Configuration - FIXED
+const allowedOrigins = [
+  // Production domains
+  'https://server.pudhuyugamacademy.com',
+  'https://www.server.pudhuyugamacademy.com',
+  'https://pudhuyugamacademy.com',
+  'https://www.pudhuyugamacademy.com',
+  
+  // Development domains
+  'https://dev.pudhuyugamacademy.com',
+  'https://www.dev.pudhuyugamacademy.com',
+  'http://localhost:3000',
+  'http://localhost:4000',
+  'http://localhost:5173', // Vite default
+  'http://127.0.0.1:3000',
+  'http://127.0.0.1:4000',
+  'http://127.0.0.1:5173'
+];
+
+// Single CORS configuration
+app.use(cors({
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    // Check if the origin is in the allowed list
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      return callback(null, true);
+    } else {
+      console.log('CORS blocked origin:', origin);
+      return callback(new Error('Not allowed by CORS'));
+    }
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: [
+    'Content-Type', 
+    'Authorization', 
+    'auth_key',
+    'X-Requested-With',
+    'Accept',
+    'Origin'
+  ],
+  credentials: true,
+  optionsSuccessStatus: 200 // For legacy browser support
 }));
-app.use(cors({ 
-  origin: process.env.NODE_ENV === 'production' ? ['https://server.pudhuyugamacademy.com', 'https://www.server.pudhuyugamacademy.com'] : '*', 
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], 
-  allowedHeaders: ['Content-Type', 'Authorization', 'auth_key'],
-  credentials: true
-}));
+
+// Additional middleware
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 app.use(morgan('dev', {skip: function (req, res) {return req.path === '/health';}}));
@@ -65,8 +100,10 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: false }));
 app.use(cookieParser());
 
-
+// Health check
 app.get('/health', (req, res) => res.sendStatus(200));
+
+// Swagger setup
 setupSwagger(app);
 
 // User routes
