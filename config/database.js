@@ -8,8 +8,18 @@ console.log('🔧 Database Environment Debug:', {
   DB_HOST: process.env.NODE_ENV === 'production' ? process.env.DB_HOST : process.env.DB_LOCAL_HOST,
   DB_NAME: process.env.NODE_ENV === 'production' ? process.env.DB_NAME : process.env.DB_LOCAL_NAME,
   DB_PORT: process.env.DB_PORT,
-  DATABASE_URL_EXISTS: !!process.env.DATABASE_URL
+  DATABASE_URL_EXISTS: !!process.env.DATABASE_URL,
+  DATABASE_URL: process.env.DATABASE_URL ? 'SET (hidden for security)' : 'NOT SET'
 });
+
+// Additional debug: Show the exact DATABASE_URL (temporarily)
+if (process.env.DATABASE_URL) {
+  console.log('🔍 DATABASE_URL Check:', {
+    length: process.env.DATABASE_URL.length,
+    starts_with: process.env.DATABASE_URL.substring(0, 20),
+    contains_hostname: process.env.DATABASE_URL.includes('dpg-d1clde6r433s73fu9sj0-a')
+  });
+}
 
 // Updated pool configuration with better error handling
 const pool = new Pool({
