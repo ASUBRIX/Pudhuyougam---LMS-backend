@@ -51,7 +51,17 @@ class User {
     return true;
   }
 
-  static generateAccessToken(user) {
+
+  static async verifyEmailPassword(email, plainPassword) {
+    const result = await query("SELECT * FROM users WHERE email = $1", [email]);
+    const user = result.rows[0];
+    if (!user) return null;
+    if (user.password_hash !== plainPassword) return null;
+
+    return { user };
+  }
+
+    static generateAccessToken(user) {
     return jwt.sign(
       { id: user.id, role: user.role, phone_number: user.phone_number },
       JWT_ACCESS_SECRET,
@@ -65,15 +75,6 @@ class User {
       JWT_REFRESH_SECRET,
       { expiresIn: "15d" }
     );
-  }
-
-  static async verifyEmailPassword(email, plainPassword) {
-    const result = await query("SELECT * FROM users WHERE email = $1", [email]);
-    const user = result.rows[0];
-    if (!user) return null;
-    if (user.password_hash !== plainPassword) return null;
-
-    return { user };
   }
 }
 

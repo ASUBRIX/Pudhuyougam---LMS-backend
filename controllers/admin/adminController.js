@@ -1,7 +1,7 @@
 const User = require("../../models/user");
 
 
-// Admin Login
+
 const loginWithEmail = async (req, res) => {
   try {
     const { email, password_hash } = req.body;
