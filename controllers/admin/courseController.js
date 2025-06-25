@@ -1,6 +1,8 @@
 const { query } = require('../../config/database');
+const fs = require('fs');
+const path = require('path');
 
-
+// Category Management Functions
 const getAllCategories = async (req, res) => {
   try {
     const categories = await query(`
@@ -39,9 +41,9 @@ const getAllCategories = async (req, res) => {
     });
   }
 };
+
 const createCategoryWithSubs = async (req, res) => {
   const { title, subcategories = [] } = req.body;
-  
   
   try {
     if (!title || title.trim().length < 2) {
@@ -74,7 +76,6 @@ const createCategoryWithSubs = async (req, res) => {
       .filter(sub => sub && typeof sub === 'string' && sub.trim().length >= 2 && sub.trim().length <= 100)
       .map(sub => sub.trim());
 
-
     await query('BEGIN');
 
     try {
@@ -82,7 +83,6 @@ const createCategoryWithSubs = async (req, res) => {
         'INSERT INTO course_categories (title) VALUES ($1) RETURNING *',
         [title.trim()]
       );
-      
       
       const categoryId = categoryResult.rows[0].id;
       const createdSubcategories = [];
@@ -110,7 +110,6 @@ const createCategoryWithSubs = async (req, res) => {
         subcategory_count: createdSubcategories.length
       };
 
-
       res.status(201).json({
         success: true,
         message: 'Category created successfully',
@@ -133,13 +132,11 @@ const createCategoryWithSubs = async (req, res) => {
   }
 };
 
-// Add subcategories to existing category
 const addSubcategoriesToCategory = async (req, res) => {
   const { categoryId } = req.params;
   const { subcategories = [] } = req.body;
 
   try {
-    // Validate category exists
     const categoryExists = await query(
       'SELECT id, title FROM course_categories WHERE id = $1',
       [categoryId]
@@ -152,7 +149,6 @@ const addSubcategoriesToCategory = async (req, res) => {
       });
     }
 
-    // Validate subcategories
     const validSubcategories = subcategories
       .filter(sub => sub && typeof sub === 'string' && sub.trim().length >= 2 && sub.trim().length <= 100)
       .map(sub => sub.trim());
@@ -167,7 +163,6 @@ const addSubcategoriesToCategory = async (req, res) => {
     const createdSubcategories = [];
 
     for (const subTitle of validSubcategories) {
-      // Check for duplicate
       const existingSub = await query(
         'SELECT id FROM course_subcategories WHERE LOWER(title) = LOWER($1) AND category_id = $2',
         [subTitle, categoryId]
@@ -197,12 +192,10 @@ const addSubcategoriesToCategory = async (req, res) => {
   }
 };
 
-// Delete category
 const deleteCategory = async (req, res) => {
   const { categoryId } = req.params;
 
   try {
-    // Check if category exists and has courses
     const categoryCheck = await query(`
       SELECT 
         cc.id, 
@@ -229,7 +222,6 @@ const deleteCategory = async (req, res) => {
       });
     }
 
-    // Delete category (subcategories will be deleted via CASCADE)
     await query('DELETE FROM course_categories WHERE id = $1', [categoryId]);
 
     res.json({
@@ -246,7 +238,7 @@ const deleteCategory = async (req, res) => {
   }
 };
 
-// Keep your existing functions
+// Course Management Functions
 const getAllCourses = async (req, res) => {
   try {
     const result = await query(`
@@ -480,6 +472,7 @@ const updateCourseSettings = async (req, res) => {
   }
 };
 
+// Module Management Functions
 const getModulesForCourse = async (req, res) => {
   try {
     const result = await query('SELECT * FROM course_content_modules WHERE course_id = $1 ORDER BY sort_order', [req.params.courseId]);
@@ -513,11 +506,109 @@ const getCourseReviews = async (req, res) => {
   }
 };
 
+// 🔥 THUMBNAIL UPLOAD FUNCTION
+const uploadThumbnail = async (req, res) => {
+  try {
+    console.log('Thumbnail upload request received');
+    console.log('Request body:', req.body);
+    console.log('File info:', req.file);
+
+    const { courseId } = req.body;
+    
+    if (!req.file) {
+      return res.status(400).json({ 
+        error: 'No thumbnail file provided',
+        success: false 
+      });
+    }
+
+    if (!courseId) {
+      // Clean up uploaded file if no courseId
+      if (fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path);
+      }
+      return res.status(400).json({ 
+        error: 'Course ID is required',
+        success: false 
+      });
+    }
+
+    // Verify course exists
+    const courseCheck = await query('SELECT id FROM courses WHERE id = $1', [courseId]);
+    if (courseCheck.rows.length === 0) {
+      // Clean up uploaded file if course doesn't exist
+      if (fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path);
+      }
+      return res.status(404).json({ 
+        error: 'Course not found',
+        success: false 
+      });
+    }
+
+    // Construct the file path (relative URL for frontend)
+    const thumbnailUrl = `/uploads/course-thumbnails/${req.file.filename}`;
+    
+    console.log('Updating course thumbnail:', { courseId, thumbnailUrl, filePath: req.file.path });
+
+    // Update the course with the thumbnail path
+    const result = await query(
+      'UPDATE courses SET thumbnail = $1, updated_at = NOW() WHERE id = $2 RETURNING *',
+      [thumbnailUrl, courseId]
+    );
+
+    if (result.rows.length === 0) {
+      // Clean up uploaded file if update failed
+      if (fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path);
+      }
+      return res.status(404).json({ 
+        error: 'Failed to update course with thumbnail',
+        success: false 
+      });
+    }
+
+    console.log('Thumbnail updated successfully for course:', courseId);
+
+    res.json({
+      success: true,
+      message: 'Thumbnail uploaded successfully',
+      thumbnailUrl: thumbnailUrl,
+      fileName: req.file.filename,
+      fileSize: req.file.size,
+      course: result.rows[0]
+    });
+
+  } catch (error) {
+    console.error('Thumbnail upload error:', error);
+    
+    // Clean up uploaded file in case of error
+    if (req.file && fs.existsSync(req.file.path)) {
+      try {
+        fs.unlinkSync(req.file.path);
+        console.log('Cleaned up uploaded file after error');
+      } catch (cleanupError) {
+        console.error('Failed to cleanup uploaded file:', cleanupError);
+      }
+    }
+    
+    res.status(500).json({ 
+      success: false,
+      error: 'Failed to upload thumbnail',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+// Export all functions
 module.exports = {
+  // Category functions
   getAllCategories,
   createCategoryWithSubs,
   addSubcategoriesToCategory,
   deleteCategory,
+  
+  // Course functions
   getAllCourses,
   getCourseById,
   getCourseStats,
@@ -525,7 +616,12 @@ module.exports = {
   updateCourse,
   updateCourseSettings, 
   deleteCourse,
+  
+  // Module functions
   getModulesForCourse,
   createModule,
-  getCourseReviews
+  getCourseReviews,
+  
+  // 🔥 NEW: Thumbnail upload
+  uploadThumbnail
 };

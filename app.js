@@ -4,6 +4,7 @@ const path = require('path');
 const cors = require('cors');
 const morgan = require('morgan');
 const cookieParser = require('cookie-parser');
+const fs = require('fs');
 const {setupSwagger} = require('./config/swagger');
 require('./config/database');
 
@@ -42,16 +43,54 @@ const adminStudentRoutes = require('./routes/admin/studentManagement');
 const adminSettingRoutes = require('./routes/admin/setting');
 const adminTestRoutes = require('./routes/admin/test');
 
-// Static files
+// 🔥 Create uploads directories if they don't exist
+const uploadsDir = path.join(__dirname, 'uploads');
+const courseThumbsDir = path.join(__dirname, 'uploads/course-thumbnails');
+const galleryDir = path.join(__dirname, 'public/uploads/gallery');
+
+// Create directories
+[uploadsDir, courseThumbsDir, galleryDir].forEach(dir => {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+    console.log(`📁 Created directory: ${dir}`);
+  }
+});
+
+// 🔥 Static files configuration
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Existing gallery uploads
 app.use('/uploads/gallery', express.static(path.join(__dirname, 'public/uploads/gallery')));
 
+// 🔥 NEW: Course thumbnails static serving
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads/course-thumbnails', express.static(path.join(__dirname, 'uploads/course-thumbnails')));
+
+// Log static file configuration
+console.log('📁 Static files configuration:');
+console.log('   - Public files:', path.join(__dirname, 'public'));
+console.log('   - Gallery uploads:', path.join(__dirname, 'public/uploads/gallery'));
+console.log('   - Course thumbnails:', path.join(__dirname, 'uploads/course-thumbnails'));
+console.log('   - All uploads:', path.join(__dirname, 'uploads'));
+
+const allowedOrigins = [
+  'https://pudhuyougam-lms-frontend-git-dev-2bcad9-tonys-projects-b0aa070e.vercel.app/',
+  'https://pudhuyougam-lms-frontend-4235h0218-tonys-projects-b0aa070e.vercel.app/',
+  'https://dev.pudhuyugamacademy.com',
+  'https://pudhuyugamacademy.com',
+  'https://www.pudhuyugamacademy.com'
+];
+
+// Add localhost origins in development
+if (process.env.NODE_ENV === 'development') {
+  allowedOrigins.push(
+    'http://localhost:4000',
+    'http://127.0.0.1:4000'
+  );
+}
+
 app.use(cors({
-  origin: [
-    'https://dev.pudhuyugamacademy.com',
-    'https://pudhuyugamacademy.com',
-    'https://www.pudhuyugamacademy.com'
-  ],
+  origin: allowedOrigins,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'auth_key']
@@ -60,10 +99,6 @@ app.use(cors({
 app.options('*', cors());
 
 app.use(cookieParser());
-
-
-
-app.options('*', cors());
 
 // Additional middleware
 app.set('views', path.join(__dirname, 'views'));
@@ -75,6 +110,33 @@ app.use(cookieParser());
 
 // Health check
 app.get('/health', (req, res) => res.sendStatus(200));
+
+// 🔥 Debug endpoint for static files
+app.get('/debug/uploads', (req, res) => {
+  try {
+    const thumbnailFiles = fs.existsSync(courseThumbsDir) ? fs.readdirSync(courseThumbsDir) : [];
+    const galleryFiles = fs.existsSync(galleryDir) ? fs.readdirSync(galleryDir) : [];
+    
+    res.json({
+      message: 'Static files debug info',
+      directories: {
+        uploads: uploadsDir,
+        courseThumbnails: courseThumbsDir,
+        gallery: galleryDir
+      },
+      files: {
+        thumbnails: thumbnailFiles.slice(0, 10), // Show first 10 files
+        gallery: galleryFiles.slice(0, 10)
+      },
+      sampleUrls: {
+        thumbnail: thumbnailFiles.length > 0 ? `/uploads/course-thumbnails/${thumbnailFiles[0]}` : null,
+        gallery: galleryFiles.length > 0 ? `/uploads/gallery/${galleryFiles[0]}` : null
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
 // Swagger setup
 setupSwagger(app);
@@ -116,6 +178,13 @@ app.use('/api/admin/test', adminTestRoutes);
 
 // 404 handler
 app.use((req, res, next) => {
+  // Log 404s for uploads to help debug
+  if (req.path.startsWith('/uploads/')) {
+    console.log(`❌ 404 for upload file: ${req.path}`);
+    console.log(`   Requested file: ${path.join(__dirname, req.path)}`);
+    console.log(`   File exists: ${fs.existsSync(path.join(__dirname, req.path))}`);
+  }
+  
   res.status(404).json({ 
     error: 'Endpoint not found',
     message: `The endpoint ${req.method} ${req.path} does not exist`,
@@ -125,7 +194,7 @@ app.use((req, res, next) => {
 
 // Global error handler
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  console.error('❌ Global error:', err.stack);
   res.status(500).json({
     error: 'Internal server error',
     message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong'
