@@ -74,8 +74,6 @@ console.log('   - Course thumbnails:', path.join(__dirname, 'uploads/course-thum
 console.log('   - All uploads:', path.join(__dirname, 'uploads'));
 
 const allowedOrigins = [
-  'https://pudhuyougam-lms-frontend-git-dev-2bcad9-tonys-projects-b0aa070e.vercel.app/',
-  'https://pudhuyougam-lms-frontend-4235h0218-tonys-projects-b0aa070e.vercel.app/',
   'https://dev.pudhuyugamacademy.com',
   'https://pudhuyugamacademy.com',
   'https://www.pudhuyugamacademy.com'
