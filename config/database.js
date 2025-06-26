@@ -1,7 +1,7 @@
 const { Pool } = require('pg');
 require('dotenv').config();
 
-// Updated pool configuration with better error handling
+// Updated pool configuration for Hostinger VPS with Docker
 const pool = new Pool({
   ...(process.env.DATABASE_URL ? 
     { connectionString: process.env.DATABASE_URL } : 
@@ -16,7 +16,11 @@ const pool = new Pool({
   max: 10,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 10000,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+  // Fixed SSL configuration for Docker PostgreSQL on VPS
+  ssl: process.env.PGSSLMODE === 'disable' ? false : 
+       (process.env.DATABASE_URL && process.env.DATABASE_URL.includes('localhost')) ? false :
+       process.env.NODE_ENV === 'production' && !process.env.DATABASE_URL ? false : 
+       process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
 });
 
 // Simple query with error handling
@@ -25,6 +29,7 @@ async function query(text, params) {
     const result = await pool.query(text, params);
     return result;
   } catch (error) {
+    console.error('Database query error:', error.message);
     throw error;
   }
 }
@@ -38,6 +43,7 @@ async function withTransaction(callback) {
     await client.query('COMMIT');
     return result;
   } catch (err) {
+    console.error('Transaction error:', err.message);
     await client.query('ROLLBACK');
     throw err;
   } finally {
@@ -45,13 +51,15 @@ async function withTransaction(callback) {
   }
 }
 
-// Connection test
+// Connection test with better logging
 pool.connect()
   .then(client => {
     return client
       .query('SELECT NOW() as current_time')
-      .then(() => {
-        console.log("DB Connected");        
+      .then((result) => {
+        console.log("✅ DB Connected successfully");
+        console.log(`📊 Connected to: ${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_NAME}`);
+        console.log(`🔒 SSL Mode: ${pool.options.ssl ? 'enabled' : 'disabled'}`);
         client.release();
       })
       .catch(err => {
@@ -60,17 +68,23 @@ pool.connect()
       });
   })
   .catch(err => {
+    console.error('❌ Database connection failed:', err.message);
+    console.error('🔧 Check your database configuration and ensure PostgreSQL is running');
   });
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
+  console.log('🔄 Gracefully shutting down database connections...');
   pool.end(() => {
+    console.log('✅ Database connections closed');
     process.exit(0);
   });
 });
 
 process.on('SIGINT', () => {
+  console.log('🔄 Gracefully shutting down database connections...');
   pool.end(() => {
+    console.log('✅ Database connections closed');
     process.exit(0);
   });
 });

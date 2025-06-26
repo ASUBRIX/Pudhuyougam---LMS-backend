@@ -87,16 +87,43 @@ if (process.env.NODE_ENV === 'development') {
   );
 }
 
+// 🔥 UPDATED: Enhanced CORS configuration
 app.use(cors({
-  origin: allowedOrigins,
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      console.log(`❌ CORS blocked origin: ${origin}`);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'auth_key']
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: [
+    'Content-Type', 
+    'Authorization', 
+    'auth_key',
+    'X-Requested-With',
+    'Accept',
+    'Origin'
+  ],
+  exposedHeaders: ['Set-Cookie'],
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 }));
 
-app.options('*', cors());
-
-app.use(cookieParser());
+// 🔥 UPDATED: Explicit OPTIONS handling
+app.options('*', (req, res) => {
+  console.log(`✅ OPTIONS request for: ${req.path}`);
+  res.header('Access-Control-Allow-Origin', req.headers.origin);
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, auth_key, X-Requested-With, Accept, Origin');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.sendStatus(204);
+});
 
 // Additional middleware
 app.set('views', path.join(__dirname, 'views'));
@@ -105,6 +132,14 @@ app.use(morgan('dev', {skip: function (req, res) {return req.path === '/health';
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: false }));
 app.use(cookieParser());
+
+// 🔥 UPDATED: Request logging middleware
+app.use((req, res, next) => {
+  if (req.path.includes('/api/admin')) {
+    console.log(`🔍 ${req.method} ${req.path} from origin: ${req.headers.origin}`);
+  }
+  next();
+});
 
 // Health check
 app.get('/health', (req, res) => res.sendStatus(200));
@@ -155,8 +190,8 @@ app.use('/api/slides', slidesRoutes);
 app.use('/api/legal', userLegalRoutes);
 app.use('/api/notice-board', userNoticeBoardRoutes);
 
-// Admin routes
-app.use('/api/admin/login', adminRoutes);
+
+app.use('/api/admin/login', adminRoutes); 
 app.use('/api/admin/announcements', adminAnnouncementRoutes);
 app.use('/api/admin/banners', adminBannerRoutes);
 app.use('/api/admin/blogs', adminBlogRoutes);
@@ -176,13 +211,13 @@ app.use('/api/admin/test', adminTestRoutes);
 
 // 404 handler
 app.use((req, res, next) => {
-  // Log 404s for uploads to help debug
   if (req.path.startsWith('/uploads/')) {
     console.log(`❌ 404 for upload file: ${req.path}`);
     console.log(`   Requested file: ${path.join(__dirname, req.path)}`);
     console.log(`   File exists: ${fs.existsSync(path.join(__dirname, req.path))}`);
   }
   
+  console.log(`❌ 404 - Route not found: ${req.method} ${req.path}`);
   res.status(404).json({ 
     error: 'Endpoint not found',
     message: `The endpoint ${req.method} ${req.path} does not exist`,
