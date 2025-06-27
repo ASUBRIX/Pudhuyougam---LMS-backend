@@ -106,7 +106,7 @@ app.options('*', (req, res) => {
   res.sendStatus(204);
 });
 
-// Additional middleware
+
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 app.use(morgan('dev', {skip: function (req, res) {return req.path === '/health';}}));
@@ -114,10 +114,10 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: false }));
 app.use(cookieParser());
 
-// Health check
+
 app.get('/health', (req, res) => res.sendStatus(200));
 
-// Debug endpoint for static files
+
 app.get('/debug/uploads', (req, res) => {
   try {
     const thumbnailFiles = fs.existsSync(courseThumbsDir) ? fs.readdirSync(courseThumbsDir) : [];
@@ -145,7 +145,7 @@ app.get('/debug/uploads', (req, res) => {
 });
 setupSwagger(app);
 
-// User routes
+
 app.use('/api', userHomeRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/student/profile', studentProfileRoutes);
@@ -180,7 +180,7 @@ app.use('/api/admin/students', adminStudentRoutes);
 app.use('/api/admin/settings', adminSettingRoutes);
 app.use('/api/admin/test', adminTestRoutes);
 
-// 404 handler
+
 app.use((req, res, next) => {
   res.status(404).json({ 
     error: 'Endpoint not found',
@@ -189,7 +189,7 @@ app.use((req, res, next) => {
   });
 });
 
-// Global error handler
+
 app.use((err, req, res, next) => {
   console.error('Global error:', err.stack);
   res.status(500).json({
