@@ -1,3 +1,4 @@
+// routes/admin/testRoutes.js
 const express = require('express');
 const router = express.Router();
 const { auth, requireAdmin } = require('../../middleware/auth');
@@ -7,12 +8,14 @@ router.use(auth, requireAdmin);
 
 // Folders
 router.post('/folders', testController.createFolder);
+router.get('/folders', testController.getAllFolders);
 router.get('/folders/:folder_id/contents', testController.getFolderContents);
 router.delete('/folders/:folder_id', testController.deleteFolder);
 
 // Tests
 router.post('/', testController.createTest);
 router.put('/:test_id/settings', testController.updateTestSettings);
+router.delete('/:test_id', testController.deleteTest);
 router.get('/search', testController.searchTests);
 
 // Questions
@@ -22,4 +25,3 @@ router.delete('/:test_id/questions/:question_id', testController.deleteQuestion)
 router.get('/:test_id/questions', testController.getAllQuestions);
 
 module.exports = router;
-
