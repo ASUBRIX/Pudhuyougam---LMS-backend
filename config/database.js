@@ -1,7 +1,7 @@
 const { Pool } = require('pg');
 require('dotenv').config();
 
-// Updated pool configuration for Hostinger VPS with Docker
+
 const pool = new Pool({
   ...(process.env.DATABASE_URL ? 
     { connectionString: process.env.DATABASE_URL } : 
@@ -51,15 +51,14 @@ async function withTransaction(callback) {
   }
 }
 
-// Connection test with better logging
+// Connection test
 pool.connect()
   .then(client => {
+    console.log("DB Connected");
+    
     return client
       .query('SELECT NOW() as current_time')
-      .then((result) => {
-        console.log("✅ DB Connected successfully");
-        console.log(`📊 Connected to: ${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_NAME}`);
-        console.log(`🔒 SSL Mode: ${pool.options.ssl ? 'enabled' : 'disabled'}`);
+      .then(() => {
         client.release();
       })
       .catch(err => {
@@ -68,23 +67,18 @@ pool.connect()
       });
   })
   .catch(err => {
-    console.error('❌ Database connection failed:', err.message);
-    console.error('🔧 Check your database configuration and ensure PostgreSQL is running');
+    console.error('Database connection failed:', err.message);
   });
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
-  console.log('🔄 Gracefully shutting down database connections...');
   pool.end(() => {
-    console.log('✅ Database connections closed');
     process.exit(0);
   });
 });
 
 process.on('SIGINT', () => {
-  console.log('🔄 Gracefully shutting down database connections...');
   pool.end(() => {
-    console.log('✅ Database connections closed');
     process.exit(0);
   });
 });

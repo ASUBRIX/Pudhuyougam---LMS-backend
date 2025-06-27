@@ -8,7 +8,7 @@ const fs = require('fs');
 const {setupSwagger} = require('./config/swagger');
 require('./config/database');
 
-// Import user routes
+
 const userHomeRoutes = require('./routes/user/home');
 const userEnquiryRoutes = require('./routes/user/enquiry');
 const userRoutes = require('./routes/user/user');
@@ -24,7 +24,7 @@ const userInstructorRoutes = require('./routes/user/instructor');
 const userSettingsRoutes = require('./routes/user/settings');
 const userLegalRoutes = require('./routes/user/legal');
 
-// Import admin routes
+
 const adminRoutes = require('./routes/admin/admin');
 const adminAnnouncementRoutes = require('./routes/admin/announcement');
 const adminBannerRoutes = require('./routes/admin/banner');
@@ -43,43 +43,27 @@ const adminStudentRoutes = require('./routes/admin/studentManagement');
 const adminSettingRoutes = require('./routes/admin/setting');
 const adminTestRoutes = require('./routes/admin/test');
 
-// 🔥 Create uploads directories if they don't exist
+
 const uploadsDir = path.join(__dirname, 'uploads');
 const courseThumbsDir = path.join(__dirname, 'uploads/course-thumbnails');
 const galleryDir = path.join(__dirname, 'public/uploads/gallery');
-
-// Create directories
 [uploadsDir, courseThumbsDir, galleryDir].forEach(dir => {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
-    console.log(`📁 Created directory: ${dir}`);
   }
 });
-
-// 🔥 Static files configuration
 app.use(express.static(path.join(__dirname, 'public')));
-
-// Existing gallery uploads
 app.use('/uploads/gallery', express.static(path.join(__dirname, 'public/uploads/gallery')));
-
-// 🔥 NEW: Course thumbnails static serving
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/uploads/course-thumbnails', express.static(path.join(__dirname, 'uploads/course-thumbnails')));
 
-// Log static file configuration
-console.log('📁 Static files configuration:');
-console.log('   - Public files:', path.join(__dirname, 'public'));
-console.log('   - Gallery uploads:', path.join(__dirname, 'public/uploads/gallery'));
-console.log('   - Course thumbnails:', path.join(__dirname, 'uploads/course-thumbnails'));
-console.log('   - All uploads:', path.join(__dirname, 'uploads'));
+
 
 const allowedOrigins = [
   'https://dev.pudhuyugamacademy.com',
   'https://pudhuyugamacademy.com',
   'https://www.pudhuyugamacademy.com'
 ];
-
-// Add localhost origins in development
 if (process.env.NODE_ENV === 'development') {
   allowedOrigins.push(
     'http://localhost:4000',
@@ -87,16 +71,14 @@ if (process.env.NODE_ENV === 'development') {
   );
 }
 
-// 🔥 UPDATED: Enhanced CORS configuration
+
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
     
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
-      console.log(`❌ CORS blocked origin: ${origin}`);
       callback(new Error('Not allowed by CORS'));
     }
   },
@@ -115,9 +97,8 @@ app.use(cors({
   optionsSuccessStatus: 204
 }));
 
-// 🔥 UPDATED: Explicit OPTIONS handling
+
 app.options('*', (req, res) => {
-  console.log(`✅ OPTIONS request for: ${req.path}`);
   res.header('Access-Control-Allow-Origin', req.headers.origin);
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, auth_key, X-Requested-With, Accept, Origin');
@@ -133,18 +114,10 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: false }));
 app.use(cookieParser());
 
-// 🔥 UPDATED: Request logging middleware
-app.use((req, res, next) => {
-  if (req.path.includes('/api/admin')) {
-    console.log(`🔍 ${req.method} ${req.path} from origin: ${req.headers.origin}`);
-  }
-  next();
-});
-
 // Health check
 app.get('/health', (req, res) => res.sendStatus(200));
 
-// 🔥 Debug endpoint for static files
+// Debug endpoint for static files
 app.get('/debug/uploads', (req, res) => {
   try {
     const thumbnailFiles = fs.existsSync(courseThumbsDir) ? fs.readdirSync(courseThumbsDir) : [];
@@ -158,7 +131,7 @@ app.get('/debug/uploads', (req, res) => {
         gallery: galleryDir
       },
       files: {
-        thumbnails: thumbnailFiles.slice(0, 10), // Show first 10 files
+        thumbnails: thumbnailFiles.slice(0, 10), 
         gallery: galleryFiles.slice(0, 10)
       },
       sampleUrls: {
@@ -170,8 +143,6 @@ app.get('/debug/uploads', (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
-
-// Swagger setup
 setupSwagger(app);
 
 // User routes
@@ -211,13 +182,6 @@ app.use('/api/admin/test', adminTestRoutes);
 
 // 404 handler
 app.use((req, res, next) => {
-  if (req.path.startsWith('/uploads/')) {
-    console.log(`❌ 404 for upload file: ${req.path}`);
-    console.log(`   Requested file: ${path.join(__dirname, req.path)}`);
-    console.log(`   File exists: ${fs.existsSync(path.join(__dirname, req.path))}`);
-  }
-  
-  console.log(`❌ 404 - Route not found: ${req.method} ${req.path}`);
   res.status(404).json({ 
     error: 'Endpoint not found',
     message: `The endpoint ${req.method} ${req.path} does not exist`,
@@ -227,7 +191,7 @@ app.use((req, res, next) => {
 
 // Global error handler
 app.use((err, req, res, next) => {
-  console.error('❌ Global error:', err.stack);
+  console.error('Global error:', err.stack);
   res.status(500).json({
     error: 'Internal server error',
     message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong'
