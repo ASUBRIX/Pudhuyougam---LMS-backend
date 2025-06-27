@@ -23,6 +23,7 @@ const currentAffairsRoutes = require('./routes/user/currentAffairs');
 const userInstructorRoutes = require('./routes/user/instructor');
 const userSettingsRoutes = require('./routes/user/settings');
 const userLegalRoutes = require('./routes/user/legal');
+const userTestRoutes = require("./routes/user/test");
 
 
 const adminRoutes = require('./routes/admin/admin');
@@ -160,6 +161,7 @@ app.use('/api/current-affairs', currentAffairsRoutes);
 app.use('/api/slides', slidesRoutes);
 app.use('/api/legal', userLegalRoutes);
 app.use('/api/notice-board', userNoticeBoardRoutes);
+app.use('/api/tests',userTestRoutes);
 
 
 app.use('/api/admin/login', adminRoutes); 
