@@ -5,10 +5,10 @@ const courseContentController = require('../../controllers/admin/courseContentCo
 
 router.use(auth, requireAdmin);
 
-// Get course content by course ID
+
 router.get('/:courseId', courseContentController.getCourseContentByCourseId);
 
-// Upsert (create/update) course content for course
+
 router.post('/:courseId', courseContentController.upsertCourseContent);
 
 module.exports = router;
