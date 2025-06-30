@@ -24,6 +24,7 @@ const userInstructorRoutes = require('./routes/user/instructor');
 const userSettingsRoutes = require('./routes/user/settings');
 const userLegalRoutes = require('./routes/user/legal');
 const userTestRoutes = require("./routes/user/test");
+const userCourseRoutes = require('./routes/user/course');
 
 
 const adminRoutes = require('./routes/admin/admin');
@@ -162,6 +163,7 @@ app.use('/api/slides', slidesRoutes);
 app.use('/api/legal', userLegalRoutes);
 app.use('/api/notice-board', userNoticeBoardRoutes);
 app.use('/api/tests',userTestRoutes);
+app.use('/api/courses', userCourseRoutes);
 
 
 app.use('/api/admin/login', adminRoutes); 

@@ -134,7 +134,7 @@ router.use(auth, requireAdmin);
  *   post:
  *     summary: Create a new folder
  *     description: Creates a new folder for organizing tests
- *     tags: [Test Folders]
+ *     tags: [Admin Test Folders]
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -189,7 +189,7 @@ router.post('/folders', testController.createFolder);
  *   get:
  *     summary: Get all folders with pagination
  *     description: Retrieves all folders with pagination support
- *     tags: [Test Folders]
+ *     tags: [Admin Test Folders]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -246,7 +246,7 @@ router.get('/folders', testController.getAllFolders);
  *   get:
  *     summary: Get folder contents
  *     description: Retrieves all contents (subfolders and tests) within a specific folder
- *     tags: [Test Folders]
+ *     tags: [Admin Test Folders]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -294,7 +294,7 @@ router.get('/folders/:folder_id/contents', testController.getFolderContents);
  *   delete:
  *     summary: Delete a folder
  *     description: Deletes a folder (only if it's empty)
- *     tags: [Test Folders]
+ *     tags: [Admin Test Folders]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -354,7 +354,7 @@ router.delete('/folders/:folder_id', testController.deleteFolder);
  *   post:
  *     summary: Create a new test
  *     description: Creates a new test with basic information
- *     tags: [Tests]
+ *     tags: [Admin Tests]
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -439,7 +439,7 @@ router.post('/', testController.createTest);
  *   put:
  *     summary: Update test settings
  *     description: Updates test configuration and settings
- *     tags: [Tests]
+ *     tags: [Admin Tests]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -526,7 +526,7 @@ router.put('/:test_id/settings', testController.updateTestSettings);
  *   delete:
  *     summary: Delete a test
  *     description: Permanently deletes a test and all its questions
- *     tags: [Tests]
+ *     tags: [Admin Tests]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -580,7 +580,7 @@ router.delete('/:test_id', testController.deleteTest);
  *   get:
  *     summary: Search tests
  *     description: Search and filter tests with pagination and sorting
- *     tags: [Tests]
+ *     tags: [Admin Tests]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -650,7 +650,7 @@ router.get('/search', testController.searchTests);
  *   post:
  *     summary: Add a question to test
  *     description: Adds a new question with options to a specific test
- *     tags: [Questions]
+ *     tags: [Admin Questions]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -737,7 +737,7 @@ router.post('/:test_id/questions', testController.addQuestion);
  *   put:
  *     summary: Update a question
  *     description: Updates an existing question and its options
- *     tags: [Questions]
+ *     tags: [Admin Questions]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -843,7 +843,7 @@ router.put('/:test_id/questions/:question_id', testController.updateQuestion);
  *   delete:
  *     summary: Delete a question
  *     description: Permanently deletes a question from a test
- *     tags: [Questions]
+ *     tags: [Admin Questions]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -902,7 +902,7 @@ router.delete('/:test_id/questions/:question_id', testController.deleteQuestion)
  *   get:
  *     summary: Get all questions for a test
  *     description: Retrieves all questions and their options for a specific test
- *     tags: [Questions]
+ *     tags: [Admin Questions]
  *     security:
  *       - bearerAuth: []
  *     parameters:
